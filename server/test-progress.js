@@ -37,16 +37,16 @@ const server = http.createServer(app).listen(0, async () => {
     r = await call('POST', '/api/disenchant', { name: free, count: freeN }); assert.strictEqual(r.status, 200, JSON.stringify(r.data));
     assert.strictEqual(r.data.dust, PROGRESS.DISENCHANT['일반'] * freeN); assert(!r.data.collection[free]);
     // 가루를 넣어 두고 제작
-    db.prepare('UPDATE player_progress SET dust=5000').run();
+    await db.prepare('UPDATE player_progress SET dust=5000').run();
     r = await call('POST', '/api/craft', { name: '데스윙' }); assert.strictEqual(r.status, 200); assert.strictEqual(r.data.collection['데스윙'], 1); assert.strictEqual(r.data.dust, 5000 - 1600);
     r = await call('POST', '/api/craft', { name: '데스윙' }); r = await call('POST', '/api/craft', { name: '데스윙' }); assert.strictEqual(r.status, 400, '2장 넘게는 못 만듦');
     r = await call('POST', '/api/craft', { name: '학사모' }); assert.strictEqual(r.status, 400);
     // 남는 카드 한꺼번에 분해
-    { const uid = db.prepare("SELECT id FROM users WHERE username='crafter1'").get().id, n = free === '들쥐' ? '책벌레' : '들쥐';   // v140 스타터에 없을 수도 있어서 넣어 둔다
-      db.prepare("INSERT INTO collection(user_id,card_name,count) VALUES (?,?,5) ON CONFLICT(user_id,card_name) DO UPDATE SET count=5").run(uid, n); }
+    { const uid = (await db.prepare("SELECT id FROM users WHERE username='crafter1'").get()).id, n = free === '들쥐' ? '책벌레' : '들쥐';   // v140 스타터에 없을 수도 있어서 넣어 둔다
+      await db.prepare("INSERT INTO collection(user_id,card_name,count) VALUES (?,?,5) ON CONFLICT(user_id,card_name) DO UPDATE SET count=5").run(uid, n); }
     r = await call('POST', '/api/disenchant-extra'); assert.strictEqual(r.status, 200); assert(r.data.count >= 3, JSON.stringify(r.data));
     // 퀘스트: 진행 · 완료 골드
-    db.prepare("UPDATE player_progress SET quests_json=?").run(JSON.stringify([{ id: 'play3', prog: 0, done: false }, { id: 'spell10', prog: 0, done: false }, { id: 'win2', prog: 0, done: false }]));
+    await db.prepare("UPDATE player_progress SET quests_json=?").run(JSON.stringify([{ id: 'play3', prog: 0, done: false }, { id: 'spell10', prog: 0, done: false }, { id: 'win2', prog: 0, done: false }]));
     r = await call('GET', '/api/save'); rev = r.data.wallet.rev; gold = r.data.wallet.gold;
     r = await call('POST', '/api/quests/report', { rev: rev + 5, stats: { games: 1 } }); assert.strictEqual(r.status, 409, '낡은 rev');
     r = await call('POST', '/api/quests/report', { rev, stats: { games: 1, wins: 1, spells: 5000 } }); assert.strictEqual(r.status, 200);
@@ -56,22 +56,22 @@ const server = http.createServer(app).listen(0, async () => {
     r = await call('POST', '/api/quests/report', { rev, stats: { games: 1 } }); assert.deepStrictEqual(r.data.completed.map(q => q.id), ['play3']); assert.strictEqual(r.data.wallet.gold, gold + 150);
     // 바꾸기: 끝난 건 못 바꿈, 하루 1번
     r = await call('POST', '/api/quests/reroll', { index: 0 }); assert.strictEqual(r.status, 400);
-    db.prepare("UPDATE player_progress SET quests_json=?").run(JSON.stringify([{ id: 'face40', prog: 3, done: false }]));
+    await db.prepare("UPDATE player_progress SET quests_json=?").run(JSON.stringify([{ id: 'face40', prog: 3, done: false }]));
     r = await call('POST', '/api/quests/reroll', { index: 0 }); assert.strictEqual(r.status, 200); assert.notStrictEqual(r.data.quests.list[0].id, 'face40');
     r = await call('POST', '/api/quests/reroll', { index: 0 }); assert.strictEqual(r.status, 400, '두 번째는 안 됨');
     // 날짜가 바뀌면 새 퀘스트
-    db.prepare("UPDATE player_progress SET quest_day='2000-01-01', rerolls=1").run();
+    await db.prepare("UPDATE player_progress SET quest_day='2000-01-01', rerolls=1").run();
     r = await call('GET', '/api/progress'); assert.strictEqual(r.data.quests.rerollsLeft, PROGRESS.REROLLS); assert.strictEqual(r.data.quests.list.length, PROGRESS.PER_DAY);
     console.log('✔ 제작·분해 · 일일 퀘스트');
     // 감정 표현 (유저 대전 코어)
-    const { createPvp } = require('./pvp-core');
-    const core = createPvp({ cfg: { turnMs: 5000, mulliganMs: 5000, reconnectMs: 5000, graceMs: 0 }, loadDeck: () => E.defaultDeckList(), settle: () => [{ reward: 0 }, { reward: 0 }] });
+    const { mkCore } = require('./test-pvp-helper');
+    const core = mkCore({ cfg: { turnMs: 5000, mulliganMs: 5000, reconnectMs: 5000, graceMs: 0 }, loadDeck: () => E.defaultDeckList(), settle: () => [{ reward: 0 }, { reward: 0 }] });
     const box = { 1: [], 2: [] };
-    [1, 2].forEach(u => core.connect(u, 'u' + u, { send: m => box[u].push(JSON.parse(JSON.stringify(m))) }));
-    core.queueJoin(1); core.queueJoin(2);
+    for (const u of [1, 2]) await core.connect(u, 'u' + u, { send: m => box[u].push(JSON.parse(JSON.stringify(m))) });
+    await core.queueJoin(1); await core.queueJoin(2);
     await new Promise(r => setTimeout(r, 50));
     const mid = box[1].filter(m => m.t === 'match').pop().matchId;
-    assert.ok(core.emote(1, mid, 'hello').ok); assert.ok(!core.emote(1, mid, 'hello').ok, '너무 빠름'); assert.ok(!core.emote(2, mid, 'hack').ok);
+    assert.ok((await core.emote(1, mid, 'hello')).ok); assert.ok(!(await core.emote(1, mid, 'hello')).ok, '너무 빠름'); assert.ok(!(await core.emote(2, mid, 'hack')).ok);
     const got = box[2].find(m => m.t === 'emote'); assert(got && got.id === 'hello' && got.seat !== undefined); assert(!box[1].some(m => m.t === 'emote'), '보낸 사람에게는 안 감');
     core.shutdown && core.shutdown();
     console.log('✔ 감정 표현');

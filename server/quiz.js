@@ -9,15 +9,7 @@ const express = require('express');
 const db = require('./db');
 const { requireAuth } = require('./auth');
 
-db.exec(`
-CREATE TABLE IF NOT EXISTS quiz_seen (
-  user_id  INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-  qid      TEXT    NOT NULL,                   -- 문항 id (예: k26-c-12 = 2026 국어 공통 12번)
-  times    INTEGER NOT NULL DEFAULT 1,          -- 나온 횟수
-  last_at  INTEGER NOT NULL,                   -- 마지막으로 나온 시각
-  PRIMARY KEY (user_id, qid)
-);
-`);
+// 테이블은 schema.sql (quiz_seen)
 
 let IDS = null;
 function knownIds() {
@@ -29,18 +21,18 @@ function knownIds() {
 
 const router = express.Router();
 router.use('/quiz', requireAuth);
-router.get('/quiz/seen', (req, res) => {
-  const rows = db.prepare('SELECT qid, times FROM quiz_seen WHERE user_id=?').all(req.user.id);
+router.get('/quiz/seen', async (req, res) => {
+  const rows = await db.prepare('SELECT qid, times FROM quiz_seen WHERE user_id=?').all(req.user.id);
   const seen = {}; for (const r of rows) seen[r.qid] = r.times;
   res.json({ seen });
 });
 const upsert = db.prepare(`INSERT INTO quiz_seen (user_id, qid, times, last_at) VALUES (?, ?, 1, ?)
-  ON CONFLICT(user_id, qid) DO UPDATE SET times = times + 1, last_at = excluded.last_at`);
-router.post('/quiz/seen', (req, res) => {
+  ON CONFLICT(user_id, qid) DO UPDATE SET times = quiz_seen.times + 1, last_at = excluded.last_at`);
+router.post('/quiz/seen', async (req, res) => {
   const ids = Array.isArray((req.body || {}).ids) ? req.body.ids : [];
   const known = knownIds(), now = Date.now();
   const ok = [...new Set(ids.map(String))].filter(id => id.length <= 40 && known.has(id)).slice(0, 40);
-  for (const id of ok) upsert.run(req.user.id, id, now);   // node:sqlite (트랜잭션 함수 없음) · 최대 40개라 그냥 차례로
+  for (const id of ok) await upsert.run(req.user.id, id, now);   // 최대 40개라 그냥 차례로
   res.json({ ok: true, saved: ok.length });
 });
 

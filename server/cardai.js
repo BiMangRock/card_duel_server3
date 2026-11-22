@@ -19,24 +19,7 @@ const E = require(path.join(JS, 'engine.js'));
 const DATA_DIR = path.join(__dirname, '..', 'data');
 const APPROVED_FILE = path.join(DATA_DIR, 'approved-cards.json');
 
-db.exec(`
-CREATE TABLE IF NOT EXISTS card_proposals (
-  id          INTEGER PRIMARY KEY AUTOINCREMENT,
-  user_id     INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-  created_at  INTEGER NOT NULL,
-  status      TEXT    NOT NULL DEFAULT 'pending',      -- pending | approved | rejected
-  mode        TEXT    NOT NULL,                        -- data(기존 효과 조합) | new_effect(새 효과 코드 필요)
-  input_json  TEXT    NOT NULL,                        -- 유저가 낸 원본
-  card_json   TEXT    NOT NULL,                        -- 검사를 통과한 카드 데이터
-  effect_json TEXT,                                    -- new_effect 일 때 {type, code, text}
-  check_json  TEXT,                                    -- 자동 점검 결과
-  flags_json  TEXT    NOT NULL DEFAULT '[]',           -- 경고 목록
-  image       TEXT,                                    -- 유저가 올린 그림 (작게 줄인 data URL)
-  note        TEXT,                                    -- 개발자 메모(반려 사유 등)
-  reviewed_at INTEGER
-);
-CREATE INDEX IF NOT EXISTS idx_card_proposals_user ON card_proposals(user_id, id);
-`);
+// 테이블은 schema.sql (card_proposals)
 
 // ---------- 프롬프트 ----------
 const KNOWN_EFFECTS = new Set(E.CARD_POOL.map(c => c.effect && c.effect.type).filter(Boolean));
@@ -251,10 +234,10 @@ router.post('/cardai/draft', requireAuth, async (req, res, next) => {
     const out = checkAnswer(ans, ci.input);
     if (out.error) return res.status(502).json({ error: out.error });
     const check = out.mode === 'data' ? autoCheck(JSON.parse(JSON.stringify(out.card))) : null;
-    const info = db.prepare(`INSERT INTO card_proposals(user_id,created_at,status,mode,input_json,card_json,effect_json,check_json,flags_json,image)
-      VALUES (?,?,?,?,?,?,?,?,?,?)`).run(req.user.id, Date.now(), 'pending', out.mode, JSON.stringify(ci.input), JSON.stringify(out.card),
+    const info = await db.prepare(`INSERT INTO card_proposals(user_id,created_at,status,mode,input_json,card_json,effect_json,check_json,flags_json,image)
+      VALUES (?,?,?,?,?,?,?,?,?,?) RETURNING id`).get(req.user.id, Date.now(), 'pending', out.mode, JSON.stringify(ci.input), JSON.stringify(out.card),
       out.newEffect ? JSON.stringify(out.newEffect) : null, check ? JSON.stringify(check) : null, JSON.stringify(out.flags), ci.image);
-    const row = db.prepare('SELECT * FROM card_proposals WHERE id=?').get(Number(info.lastInsertRowid));
+    const row = await db.prepare('SELECT * FROM card_proposals WHERE id=?').get(Number(info.id));
     res.json({ proposal: rowOut(row), reason: out.reason });
   } catch (e) {
     if (e.status) return res.status(e.status).json({ error: e.message });
@@ -262,30 +245,32 @@ router.post('/cardai/draft', requireAuth, async (req, res, next) => {
   }
 });
 
-router.get('/cardai/mine', requireAuth, (req, res) => {
-  const rows = db.prepare('SELECT * FROM card_proposals WHERE user_id=? ORDER BY id DESC LIMIT 30').all(req.user.id);
+router.get('/cardai/mine', requireAuth, async (req, res) => {
+  const rows = await db.prepare('SELECT * FROM card_proposals WHERE user_id=? ORDER BY id DESC LIMIT 30').all(req.user.id);
   res.json({ proposals: rows.map(rowOut) });
 });
 
-router.get('/cardai/admin/list', requireAdmin, (req, res) => {
-  const rows = db.prepare(`SELECT p.*, COALESCE(u.nickname,u.username) AS username FROM card_proposals p JOIN users u ON u.id=p.user_id
+router.get('/cardai/admin/list', requireAdmin, async (req, res) => {
+  const rows = await db.prepare(`SELECT p.*, COALESCE(u.nickname,u.username) AS username FROM card_proposals p JOIN users u ON u.id=p.user_id
     ORDER BY (p.status='pending') DESC, p.id DESC LIMIT 100`).all();
   res.json({ proposals: rows.map(rowOut) });
 });
 
-router.post('/cardai/admin/:id/review', requireAdmin, (req, res) => {
+router.post('/cardai/admin/:id/review', requireAdmin, async (req, res) => {
   const id = Number(req.params.id), decision = req.body && req.body.decision;
   if (!['approved', 'rejected'].includes(decision)) return res.status(400).json({ error: 'decision 은 approved 또는 rejected 예요.' });
-  const row = db.prepare('SELECT * FROM card_proposals WHERE id=?').get(id);
+  const row = Number.isInteger(id) ? await db.prepare('SELECT * FROM card_proposals WHERE id=?').get(id) : null;
   if (!row) return res.status(404).json({ error: '없는 제안이에요.' });
   if (row.status !== 'pending') return res.status(409).json({ error: '이미 처리된 제안이에요.' });
   const note = String((req.body && req.body.note) || '').slice(0, 300);
-  db.prepare('UPDATE card_proposals SET status=?, note=?, reviewed_at=? WHERE id=?').run(decision, note, Date.now(), id);
+  await db.prepare('UPDATE card_proposals SET status=?, note=?, reviewed_at=? WHERE id=?').run(decision, note, Date.now(), id);
   if (decision === 'approved') {                                // 시연용: 승인된 카드를 파일에 쌓는다 (엔진·카드 목록 반영은 개발자가 한다)
-    fs.mkdirSync(DATA_DIR, { recursive: true });
-    let list = []; try { list = JSON.parse(fs.readFileSync(APPROVED_FILE, 'utf8')); } catch (_) {}
-    list.push({ id, approvedAt: Date.now(), card: JSON.parse(row.card_json), newEffect: row.effect_json ? JSON.parse(row.effect_json) : null });
-    fs.writeFileSync(APPROVED_FILE, JSON.stringify(list, null, 2));
+    try {                                                       // Vercel 은 파일을 쓸 수 없다 → 실패해도 DB 의 승인 기록은 남는다
+      fs.mkdirSync(DATA_DIR, { recursive: true });
+      let list = []; try { list = JSON.parse(fs.readFileSync(APPROVED_FILE, 'utf8')); } catch (_) {}
+      list.push({ id, approvedAt: Date.now(), card: JSON.parse(row.card_json), newEffect: row.effect_json ? JSON.parse(row.effect_json) : null });
+      fs.writeFileSync(APPROVED_FILE, JSON.stringify(list, null, 2));
+    } catch (e) { console.warn('[cardai] approved-cards.json 을 쓰지 못했어요 (DB 에는 승인으로 남음):', e.message); }
   }
   res.json({ ok: true, status: decision });
 });

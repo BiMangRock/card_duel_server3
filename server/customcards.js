@@ -15,61 +15,18 @@ const JS = path.join(__dirname, '..', 'public', 'js');
 const E = require(path.join(JS, 'engine.js'));
 const CR = require(path.join(JS, 'cardrules.js'));
 
-db.exec(`
-CREATE TABLE IF NOT EXISTS custom_cards (
-  id           INTEGER PRIMARY KEY AUTOINCREMENT,
-  user_id      INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-  name         TEXT    NOT NULL UNIQUE,
-  status       TEXT    NOT NULL DEFAULT 'made',     -- made | pending | approved | rejected
-  input_json   TEXT    NOT NULL,                    -- 유저가 고른 값 {name,cost,atk,hp,selections}
-  card_json    TEXT    NOT NULL,                    -- 실제 게임 카드 데이터
-  lines_json   TEXT    NOT NULL,                    -- 효과별 문장·등급·비용 (검토 화면용)
-  budget_json  TEXT    NOT NULL,
-  warns_json   TEXT    NOT NULL DEFAULT '[]',
-  check_json   TEXT,                                -- 봇 대전 자동 점검 결과
-  image        BLOB,                                -- 카드 그림 (브라우저가 작게 줄여 보낸 webp/png/jpeg)
-  image_type   TEXT,
-  note         TEXT,                                -- 승인·반려 메모
-  created_at   INTEGER NOT NULL,
-  requested_at INTEGER,
-  reviewed_at  INTEGER
-);
-CREATE INDEX IF NOT EXISTS idx_custom_cards_user ON custom_cards(user_id, id);
-CREATE TABLE IF NOT EXISTS custom_card_versions (    -- 버전 기록 (만들 때 v1, 고칠 때마다 +1) → 승인 페이지의 변경 비교
-  card_id      INTEGER NOT NULL REFERENCES custom_cards(id) ON DELETE CASCADE,
-  version      INTEGER NOT NULL,
-  card_json    TEXT    NOT NULL,
-  lines_json   TEXT    NOT NULL,
-  budget_json  TEXT    NOT NULL,
-  status_before TEXT,                               -- 고치기 직전 상태 (made | rejected)
-  note_before  TEXT,                                -- 고치기 직전 반려 사유
-  created_at   INTEGER NOT NULL,
-  PRIMARY KEY (card_id, version)
-);
-CREATE TABLE IF NOT EXISTS gold_log (               -- 개발자가 바꾼 골드 기록
-  id         INTEGER PRIMARY KEY AUTOINCREMENT,
-  admin_id   INTEGER NOT NULL,
-  user_id    INTEGER NOT NULL,
-  before     INTEGER NOT NULL,
-  after      INTEGER NOT NULL,
-  at         INTEGER NOT NULL
-);
-CREATE TABLE IF NOT EXISTS custom_card_images (      -- 소환수 그림 (카드 한 장에 여러 개)
-  id         INTEGER PRIMARY KEY AUTOINCREMENT,
-  card_id    INTEGER NOT NULL REFERENCES custom_cards(id) ON DELETE CASCADE,
-  image      BLOB    NOT NULL,
-  image_type TEXT    NOT NULL
-);
-CREATE INDEX IF NOT EXISTS idx_custom_cards_status ON custom_cards(status, id);
-`);
+// 테이블은 schema.sql (custom_cards · custom_card_versions · gold_log · custom_card_images)
 
 const STATUS_LABEL = { made: '만듦', pending: '승인 대기', approved: '승인됨', rejected: '반려됨' };
-const creatorOf = uid => { const u = db.prepare('SELECT COALESCE(nickname, username) AS n FROM users WHERE id=?').get(uid); return u ? u.n : '?'; };
+// 카드 행 + 만든 사람 이름 (cardOf 가 DB 를 다시 부르지 않게 한 번에)
+const SEL = "SELECT c.*, COALESCE(u.nickname, u.username) AS creator_name FROM custom_cards c LEFT JOIN users u ON u.id=c.user_id";
+const SEL_COLS = "SELECT c.id,c.user_id,c.name,c.status,c.input_json,c.card_json,c.lines_json,c.budget_json,c.warns_json,c.check_json,c.image_type,c.note,c.created_at,c.requested_at,c.reviewed_at, COALESCE(u.nickname, u.username) AS creator_name FROM custom_cards c LEFT JOIN users u ON u.id=c.user_id";
+const rowById = id => db.prepare(SEL + ' WHERE c.id=?').get(id);
 
 // DB 행 → 게임 카드 (CARD_POOL 에 들어가는 모양)
 function cardOf(row) {
   const c = JSON.parse(row.card_json);
-  c.custom = true; c.customId = row.id; c.customStatus = row.status; c.creator = creatorOf(row.user_id);
+  c.custom = true; c.customId = row.id; c.customStatus = row.status; c.creator = row.creator_name || '?';
   c.flavor = `제작: ${c.creator}` + (row.status === 'approved' ? ' · 승인된 카드' : '');
   if (row.image_type) c.art = `/api/customcards/${row.id}/art`;
   return c;
@@ -82,7 +39,27 @@ function syncPool(row) {
   for (const k of Object.keys(cur)) delete cur[k];
   Object.assign(cur, fresh); return cur;
 }
-for (const row of db.prepare('SELECT * FROM custom_cards ORDER BY id').all()) syncPool(row);   // 서버 시작: DB 의 카드를 전부 카드 풀에
+// 카드 풀 맞추기: 서버(Vercel 함수)가 여러 대일 수 있으므로, 다른 서버에서 만든·승인한 카드도 보이게
+//  POOL_TTL 마다 "개수 · 마지막 변경 시각"만 확인하고, 달라졌으면 전부 다시 읽는다 (app.js 의 미들웨어가 요청마다 부른다)
+const POOL_TTL = 5000;
+let poolAt = 0, poolSig = null, poolP = null;
+async function refreshPool(force) {
+  if (!force && Date.now() - poolAt < POOL_TTL) return;
+  if (poolP) return poolP;
+  poolP = (async () => {
+    const sig = await db.prepare('SELECT COUNT(*) AS n, COALESCE(MAX(updated_at),0) AS t, COALESCE(MAX(id),0) AS m FROM custom_cards').get();
+    const key = `${sig.n}:${sig.t}:${sig.m}`;
+    if (force || key !== poolSig) {
+      const rows = await db.prepare(SEL_COLS + ' ORDER BY c.id').all();
+      const ids = new Set(rows.map(r => r.id));
+      for (let i = E.CARD_POOL.length - 1; i >= 0; i--) { const c = E.CARD_POOL[i]; if (c.custom && !ids.has(c.customId)) E.CARD_POOL.splice(i, 1); }   // 지워진 카드
+      for (const row of rows) syncPool(row);
+      poolSig = key;
+    }
+    poolAt = Date.now();
+  })().finally(() => { poolP = null; });
+  return poolP;
+}
 
 // 유저 대전에 쓸 수 없는 카드 (승인 전 직접 만든 카드)
 function unapprovedIn(list) {
@@ -90,8 +67,8 @@ function unapprovedIn(list) {
   for (const n of list || []) { const c = E.CARD_POOL.find(x => x.name === n); if (c && c.custom && c.customStatus !== 'approved') bad.add(n); }
   return [...bad];
 }
-function unapprovedInDeckOf(uid) {
-  const d = db.prepare('SELECT deck_json FROM decks WHERE user_id=?').get(uid);
+async function unapprovedInDeckOf(uid) {
+  const d = await db.prepare('SELECT deck_json FROM decks WHERE user_id=?').get(uid);
   if (!d) return [];
   try { return unapprovedIn(JSON.parse(d.deck_json)); } catch (_) { return []; }
 }
@@ -127,25 +104,26 @@ function autoCheck(card0, games = 6) {
 }
 
 // ---------- 출력 모양 ----------
-const rowOut = (r, withInput) => ({
-  id: r.id, name: r.name, status: r.status, statusLabel: STATUS_LABEL[r.status], creator: creatorOf(r.user_id), userId: r.user_id,
-  card: cardOf(r), lines: JSON.parse(r.lines_json), budget: JSON.parse(r.budget_json), warns: JSON.parse(r.warns_json),
-  check: r.check_json ? JSON.parse(r.check_json) : null, note: r.note || null, hasArt: !!r.image_type,
-  createdAt: r.created_at, requestedAt: r.requested_at || null, reviewedAt: r.reviewed_at || null,
-  ...(withInput ? { input: JSON.parse(r.input_json) } : {}),
-  ...(withInput === 'versions' ? { versions: versionsOf(r.id) } : {}),
-  version: db.prepare('SELECT MAX(version) AS v FROM custom_card_versions WHERE card_id=?').get(r.id).v || 1,
-});
-function saveVersion(cardId, statusBefore, noteBefore) {
-  const r = db.prepare('SELECT card_json, lines_json, budget_json FROM custom_cards WHERE id=?').get(cardId);
-  const v = (db.prepare('SELECT MAX(version) AS v FROM custom_card_versions WHERE card_id=?').get(cardId).v || 0) + 1;
-  db.prepare('INSERT INTO custom_card_versions(card_id,version,card_json,lines_json,budget_json,status_before,note_before,created_at) VALUES (?,?,?,?,?,?,?,?)')
+async function rowOut(r, withInput) {
+  return {
+    id: r.id, name: r.name, status: r.status, statusLabel: STATUS_LABEL[r.status], creator: r.creator_name || '?', userId: r.user_id,
+    card: cardOf(r), lines: JSON.parse(r.lines_json), budget: JSON.parse(r.budget_json), warns: JSON.parse(r.warns_json),
+    check: r.check_json ? JSON.parse(r.check_json) : null, note: r.note || null, hasArt: !!r.image_type,
+    createdAt: r.created_at, requestedAt: r.requested_at || null, reviewedAt: r.reviewed_at || null,
+    ...(withInput ? { input: JSON.parse(r.input_json) } : {}),
+    ...(withInput === 'versions' ? { versions: await versionsOf(r.id) } : {}),
+    version: (await db.prepare('SELECT MAX(version) AS v FROM custom_card_versions WHERE card_id=?').get(r.id)).v || 1,
+  };
+}
+async function saveVersion(cardId, statusBefore, noteBefore) {
+  const r = await db.prepare('SELECT card_json, lines_json, budget_json FROM custom_cards WHERE id=?').get(cardId);
+  const v = ((await db.prepare('SELECT MAX(version) AS v FROM custom_card_versions WHERE card_id=?').get(cardId)).v || 0) + 1;
+  await db.prepare('INSERT INTO custom_card_versions(card_id,version,card_json,lines_json,budget_json,status_before,note_before,created_at) VALUES (?,?,?,?,?,?,?,?)')
     .run(cardId, v, r.card_json, r.lines_json, r.budget_json, statusBefore || null, noteBefore || null, Date.now());
   return v;
 }
-const versionsOf = cardId => db.prepare('SELECT version, card_json, lines_json, budget_json, status_before, note_before, created_at FROM custom_card_versions WHERE card_id=? ORDER BY version')
-  .all(cardId).map(v => ({ version: v.version, card: JSON.parse(v.card_json), lines: JSON.parse(v.lines_json), budget: JSON.parse(v.budget_json), statusBefore: v.status_before, noteBefore: v.note_before, at: v.created_at }));
-const COLS = 'id,user_id,name,status,input_json,card_json,lines_json,budget_json,warns_json,check_json,image_type,note,created_at,requested_at,reviewed_at';
+const versionsOf = async cardId => (await db.prepare('SELECT version, card_json, lines_json, budget_json, status_before, note_before, created_at FROM custom_card_versions WHERE card_id=? ORDER BY version')
+  .all(cardId)).map(v => ({ version: v.version, card: JSON.parse(v.card_json), lines: JSON.parse(v.lines_json), budget: JSON.parse(v.budget_json), statusBefore: v.status_before, noteBefore: v.note_before, at: v.created_at }));
 
 // 그림: data URL → {buf, type}. 브라우저가 256px 정도로 줄여 보낸다
 function parseImage(d) {
@@ -156,7 +134,8 @@ function parseImage(d) {
   if (buf.length > 250 * 1024) return { error: '그림이 너무 커요. (250KB 이하)' };
   return { buf, type: m[1] };
 }
-const nameTaken = n => !!db.prepare('SELECT 1 FROM custom_cards WHERE name=?').get(n);
+// 이름 검사는 카드 풀(메모리)로 한다 → CR.nameProblem 이 동기 함수라서. 요청마다 refreshPool 로 맞춰 두고, 저장할 때는 DB 의 UNIQUE 가 최종으로 막는다
+const nameTaken = n => E.CARD_POOL.some(c => c.custom && c.name === n);
 
 // 소환수 그림: 입력 안의 data URL 을 꺼내 'pending:번호' 로 바꿔 둔다 (카드를 저장한 뒤 진짜 주소로 바꾼다)
 function takeTokenImages(selections) {
@@ -173,6 +152,7 @@ function takeTokenImages(selections) {
   return { imgs, error: errors[0] || null };
 }
 const replacePending = (json, urls) => json.replace(/"pending:(\d+)"/g, (m, k) => JSON.stringify(urls[Number(k)] || ''));
+const allOut = (rows, w) => Promise.all(rows.map(r => rowOut(r, w)));
 
 // ---------- 라우터 ----------
 const router = express.Router();
@@ -180,29 +160,31 @@ const hits = new Map();
 const slowOk = uid => { const t = Date.now(), a = (hits.get(uid) || []).filter(x => t - x < 60000); if (a.length >= 10) return false; a.push(t); hits.set(uid, a); return true; };
 
 // 브라우저 카드 풀에 넣을 카드: 승인된 카드 + 내가 만든 카드 (개발자는 전부)
-router.get('/customcards/pool', requireAuth, (req, res) => {
+router.get('/customcards/pool', requireAuth, async (req, res) => {
   res.set('Cache-Control', 'no-store');
-  const rows = req.user.isAdmin ? db.prepare('SELECT * FROM custom_cards ORDER BY id').all()
-    : db.prepare("SELECT * FROM custom_cards WHERE status='approved' OR user_id=? ORDER BY id").all(req.user.id);
+  const rows = req.user.isAdmin ? await db.prepare(SEL_COLS + ' ORDER BY c.id').all()
+    : await db.prepare(SEL_COLS + " WHERE c.status='approved' OR c.user_id=? ORDER BY c.id").all(req.user.id);
   res.json({ cards: rows.map(cardOf) });
 });
 
 // 이름 확인 (입력하는 동안 화면이 묻는다)
-router.get('/customcards/name-check', requireAuth, (req, res) => {
+router.get('/customcards/name-check', requireAuth, async (req, res) => {
+  await refreshPool(true);
   res.json({ problem: CR.nameProblem(String(req.query.name || ''), nameTaken) });
 });
 
 // 내가 만든 카드
-router.get('/customcards/mine', requireAuth, (req, res) => {
+router.get('/customcards/mine', requireAuth, async (req, res) => {
   res.set('Cache-Control', 'no-store');
-  const rows = db.prepare(`SELECT ${COLS} FROM custom_cards WHERE user_id=? ORDER BY id DESC`).all(req.user.id);
-  res.json({ cards: rows.map(r => rowOut(r, true)), gold: CR.CUSTOM.GOLD_COST, editGold: CR.CUSTOM.EDIT_GOLD, max: req.user.isAdmin ? null : (CR.CUSTOM.MAX_PER_USER || null) });
+  const rows = await db.prepare(SEL_COLS + ' WHERE c.user_id=? ORDER BY c.id DESC').all(req.user.id);
+  res.json({ cards: await allOut(rows, true), gold: CR.CUSTOM.GOLD_COST, editGold: CR.CUSTOM.EDIT_GOLD, max: req.user.isAdmin ? null : (CR.CUSTOM.MAX_PER_USER || null) });
 });
 
 // 만들기 {name, cost, atk, hp, selections:[{id, params}], image}
-router.post('/customcards', requireAuth, (req, res) => {
+router.post('/customcards', requireAuth, async (req, res) => {
   const uid = req.user.id, b = req.body || {};
   if (!slowOk(uid)) return res.status(429).json({ error: '너무 빨라요. 잠시 뒤 다시 해 주세요.' });
+  await refreshPool(true);
   delete b.art;                                                  // 카드 그림은 image 로만 받는다
   const ti = takeTokenImages(b.selections);
   if (ti.error) return res.status(400).json({ error: '소환수 ' + ti.error });
@@ -211,62 +193,64 @@ router.post('/customcards', requireAuth, (req, res) => {
   const img = parseImage(b.image);
   if (img && img.error) return res.status(400).json({ error: img.error });
   if (!req.user.isAdmin && CR.CUSTOM.MAX_PER_USER) {
-    const n = db.prepare('SELECT COUNT(*) AS n FROM custom_cards WHERE user_id=?').get(uid).n;
+    const n = (await db.prepare('SELECT COUNT(*) AS n FROM custom_cards WHERE user_id=?').get(uid)).n;
     if (n >= CR.CUSTOM.MAX_PER_USER) return res.status(400).json({ error: `카드는 한 사람당 ${CR.CUSTOM.MAX_PER_USER}장까지 만들 수 있어요.` });
   }
   const check = autoCheck(JSON.parse(JSON.stringify(built.card)));
   if (check.errors) return res.status(400).json({ error: '이 조합은 게임에서 오류가 나요. 효과를 바꿔 주세요.', check });
 
-  ensureWallet(uid); ensureCollection(uid);
+  await ensureWallet(uid); await ensureCollection(uid);
   const price = CR.CUSTOM.GOLD_COST;
-  db.exec('BEGIN');
   let id;
   try {
-    const w = db.prepare('SELECT gold, rev FROM wallets WHERE user_id=?').get(uid);
-    if (w.gold < price) { db.exec('ROLLBACK'); return res.status(400).json({ error: `골드가 부족해요. (${price}골드 필요)` }); }
-    db.prepare('UPDATE wallets SET gold=gold-?, rev=rev+1, updated_at=? WHERE user_id=?').run(price, Date.now(), uid);
-    const input = { name: built.card.name, cost: built.card.cost, atk: built.card.atk, hp: built.card.hp, selections: (b.selections || []).map(s => ({ id: s.id, params: s.params || {}, ...(s.token ? { token: s.token } : {}) })) };
-    const info = db.prepare(`INSERT INTO custom_cards(user_id,name,status,input_json,card_json,lines_json,budget_json,warns_json,check_json,image,image_type,created_at)
-      VALUES (?,?,?,?,?,?,?,?,?,?,?,?)`).run(uid, built.card.name, 'made', JSON.stringify(input), JSON.stringify(built.card), JSON.stringify(built.lines),
-      JSON.stringify(built.budget), JSON.stringify(built.warns), JSON.stringify(check), img ? img.buf : null, img ? img.type : null, Date.now());
-    id = Number(info.lastInsertRowid);
-    if (ti.imgs.length) {                                        // 소환수 그림 저장 → 카드 데이터의 'pending:n' 을 진짜 주소로
-      const ins = db.prepare('INSERT INTO custom_card_images(card_id,image,image_type) VALUES (?,?,?)');
-      const urls = ti.imgs.map(im => `/api/customcards/img/${Number(ins.run(id, im.buf, im.type).lastInsertRowid)}`);
-      db.prepare('UPDATE custom_cards SET card_json=?, input_json=?, lines_json=? WHERE id=?').run(
-        replacePending(JSON.stringify(built.card), urls), replacePending(JSON.stringify(input), urls), replacePending(JSON.stringify(built.lines), urls), id);
-    }
-    saveVersion(id, null, null);
-    db.exec('COMMIT');
+    id = await db.tx(async () => {
+      const w = await db.prepare('SELECT gold, rev FROM wallets WHERE user_id=?').get(uid);
+      if (w.gold < price) return null;
+      await db.prepare('UPDATE wallets SET gold=gold-?, rev=rev+1, updated_at=? WHERE user_id=?').run(price, Date.now(), uid);
+      const input = { name: built.card.name, cost: built.card.cost, atk: built.card.atk, hp: built.card.hp, selections: (b.selections || []).map(s => ({ id: s.id, params: s.params || {}, ...(s.token ? { token: s.token } : {}) })) };
+      const cid = (await db.prepare(`INSERT INTO custom_cards(user_id,name,status,input_json,card_json,lines_json,budget_json,warns_json,check_json,image,image_type,created_at,updated_at)
+        VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?) RETURNING id`).get(uid, built.card.name, 'made', JSON.stringify(input), JSON.stringify(built.card), JSON.stringify(built.lines),
+        JSON.stringify(built.budget), JSON.stringify(built.warns), JSON.stringify(check), img ? img.buf : null, img ? img.type : null, Date.now(), Date.now())).id;
+      if (ti.imgs.length) {                                        // 소환수 그림 저장 → 카드 데이터의 'pending:n' 을 진짜 주소로
+        const ins = db.prepare('INSERT INTO custom_card_images(card_id,image,image_type) VALUES (?,?,?) RETURNING id');
+        const urls = [];
+        for (const im of ti.imgs) urls.push(`/api/customcards/img/${Number((await ins.get(cid, im.buf, im.type)).id)}`);
+        await db.prepare('UPDATE custom_cards SET card_json=?, input_json=?, lines_json=? WHERE id=?').run(
+          replacePending(JSON.stringify(built.card), urls), replacePending(JSON.stringify(input), urls), replacePending(JSON.stringify(built.lines), urls), cid);
+      }
+      await saveVersion(cid, null, null);
+      return cid;
+    }, { lock: uid });
   } catch (e) {
-    try { db.exec('ROLLBACK'); } catch (_) {}
-    if (/UNIQUE/.test(String(e.message))) return res.status(400).json({ error: '이미 있는 카드 이름이에요' });
+    if (db.isUnique(e)) return res.status(400).json({ error: '이미 있는 카드 이름이에요' });
     throw e;
   }
-  const row = db.prepare('SELECT * FROM custom_cards WHERE id=?').get(id);
+  if (!id) return res.status(400).json({ error: `골드가 부족해요. (${price}골드 필요)` });
+  const row = await rowById(id);
   const card = syncPool(row);
-  ensureAtLeast(uid, card.name, CR.CUSTOM.GIVE_COPIES);
-  res.json({ card, item: rowOut(row), wallet: walletOut(ensureWallet(uid)), collection: collectionOf(uid) });
+  await ensureAtLeast(uid, card.name, CR.CUSTOM.GIVE_COPIES);
+  res.json({ card, item: await rowOut(row), wallet: walletOut(await ensureWallet(uid)), collection: await collectionOf(uid) });
 });
 
 // 승인 요청 (PR 열기)
-router.post('/customcards/:id/request', requireAuth, (req, res) => {
-  const row = db.prepare('SELECT * FROM custom_cards WHERE id=?').get(Number(req.params.id));
+router.post('/customcards/:id/request', requireAuth, async (req, res) => {
+  const row = await rowById(Number(req.params.id));
   if (!row || row.user_id !== req.user.id) return res.status(404).json({ error: '없는 카드예요.' });
   if (row.status === 'pending') return res.status(409).json({ error: '이미 승인을 기다리고 있어요.' });
   if (row.status === 'approved') return res.status(409).json({ error: '이미 승인된 카드예요.' });
-  db.prepare("UPDATE custom_cards SET status='pending', requested_at=?, note=NULL WHERE id=?").run(Date.now(), row.id);
-  const r2 = db.prepare('SELECT * FROM custom_cards WHERE id=?').get(row.id); syncPool(r2);
-  res.json({ item: rowOut(r2) });
+  await db.prepare("UPDATE custom_cards SET status='pending', requested_at=?, note=NULL, updated_at=? WHERE id=?").run(Date.now(), Date.now(), row.id);
+  const r2 = await rowById(row.id); syncPool(r2);
+  res.json({ item: await rowOut(r2) });
 });
 
 // 고치기 (만듦·반려 카드만, 이름 고정, EDIT_GOLD 골드)
 //   만듦 → 고쳐도 만듦 (승인 요청 전까지 유저 대전 불가) / 반려 → 고치면 바로 승인 대기(재요청)
 //   그림: image 가 data URL 이면 교체, clearImage 면 지움, 둘 다 없으면 그대로
-router.put('/customcards/:id', requireAuth, (req, res) => {
+router.put('/customcards/:id', requireAuth, async (req, res) => {
   const uid = req.user.id, b = req.body || {};
   if (!slowOk(uid)) return res.status(429).json({ error: '너무 빨라요. 잠시 뒤 다시 해 주세요.' });
-  const row = db.prepare('SELECT * FROM custom_cards WHERE id=?').get(Number(req.params.id));
+  await refreshPool(true);
+  const row = await rowById(Number(req.params.id));
   if (!row || row.user_id !== uid) return res.status(404).json({ error: '없는 카드예요.' });
   if (row.status !== 'made' && row.status !== 'rejected') return res.status(409).json({ error: row.status === 'pending' ? '승인을 기다리는 카드는 고칠 수 없어요.' : '승인된 카드는 고칠 수 없어요.' });
   delete b.art; b.name = row.name;                               // 이름은 고정
@@ -280,94 +264,97 @@ router.put('/customcards/:id', requireAuth, (req, res) => {
   if (check.errors) return res.status(400).json({ error: '이 조합은 게임에서 오류가 나요. 효과를 바꿔 주세요.', check });
 
   const price = CR.CUSTOM.EDIT_GOLD, next = row.status === 'rejected' ? 'pending' : 'made';
-  ensureWallet(uid);
-  db.exec('BEGIN');
-  try {
-    const w = db.prepare('SELECT gold FROM wallets WHERE user_id=?').get(uid);
-    if (w.gold < price) { db.exec('ROLLBACK'); return res.status(400).json({ error: `골드가 부족해요. (${price}골드 필요)` }); }
-    db.prepare('UPDATE wallets SET gold=gold-?, rev=rev+1, updated_at=? WHERE user_id=?').run(price, Date.now(), uid);
-    if (!db.prepare('SELECT 1 FROM custom_card_versions WHERE card_id=?').get(row.id)) saveVersion(row.id, null, null);   // 버전 기록이 생기기 전에 만든 카드: 고치기 전 모습을 v1 로 남긴다
+  await ensureWallet(uid);
+  const ok = await db.tx(async () => {
+    const w = await db.prepare('SELECT gold FROM wallets WHERE user_id=?').get(uid);
+    if (w.gold < price) return false;
+    await db.prepare('UPDATE wallets SET gold=gold-?, rev=rev+1, updated_at=? WHERE user_id=?').run(price, Date.now(), uid);
+    if (!(await db.prepare('SELECT 1 FROM custom_card_versions WHERE card_id=?').get(row.id))) await saveVersion(row.id, null, null);   // 버전 기록이 생기기 전에 만든 카드: 고치기 전 모습을 v1 로 남긴다
     const input = { name: row.name, cost: built.card.cost, atk: built.card.atk, hp: built.card.hp, selections: (b.selections || []).map(x => ({ id: x.id, params: x.params || {}, ...(x.token ? { token: x.token } : {}) })) };
     let cardJ = JSON.stringify(built.card), inputJ = JSON.stringify(input), linesJ = JSON.stringify(built.lines);
     if (ti.imgs.length) {
-      const ins = db.prepare('INSERT INTO custom_card_images(card_id,image,image_type) VALUES (?,?,?)');
-      const urls = ti.imgs.map(im => `/api/customcards/img/${Number(ins.run(row.id, im.buf, im.type).lastInsertRowid)}`);
+      const ins = db.prepare('INSERT INTO custom_card_images(card_id,image,image_type) VALUES (?,?,?) RETURNING id');
+      const urls = [];
+      for (const im of ti.imgs) urls.push(`/api/customcards/img/${Number((await ins.get(row.id, im.buf, im.type)).id)}`);
       cardJ = replacePending(cardJ, urls); inputJ = replacePending(inputJ, urls); linesJ = replacePending(linesJ, urls);
     }
-    db.prepare(`UPDATE custom_cards SET input_json=?, card_json=?, lines_json=?, budget_json=?, warns_json=?, check_json=?, status=?, note=NULL,
-      requested_at=CASE WHEN ?='pending' THEN ? ELSE requested_at END, reviewed_at=CASE WHEN ?='pending' THEN NULL ELSE reviewed_at END WHERE id=?`)
-      .run(inputJ, cardJ, linesJ, JSON.stringify(built.budget), JSON.stringify(built.warns), JSON.stringify(check), next, next, Date.now(), next, row.id);
-    if (img) db.prepare('UPDATE custom_cards SET image=?, image_type=? WHERE id=?').run(img.buf, img.type, row.id);
-    else if (b.clearImage) db.prepare('UPDATE custom_cards SET image=NULL, image_type=NULL WHERE id=?').run(row.id);
-    saveVersion(row.id, row.status, row.note);
-    db.exec('COMMIT');
-  } catch (e) { try { db.exec('ROLLBACK'); } catch (_) {} throw e; }
-  const r2 = db.prepare('SELECT * FROM custom_cards WHERE id=?').get(row.id);
+    await db.prepare(`UPDATE custom_cards SET input_json=?, card_json=?, lines_json=?, budget_json=?, warns_json=?, check_json=?, status=?, note=NULL,
+      requested_at=CASE WHEN ?::text='pending' THEN ?::bigint ELSE requested_at END, reviewed_at=CASE WHEN ?::text='pending' THEN NULL ELSE reviewed_at END, updated_at=? WHERE id=?`)
+      .run(inputJ, cardJ, linesJ, JSON.stringify(built.budget), JSON.stringify(built.warns), JSON.stringify(check), next, next, Date.now(), next, Date.now(), row.id);
+    if (img) await db.prepare('UPDATE custom_cards SET image=?, image_type=? WHERE id=?').run(img.buf, img.type, row.id);
+    else if (b.clearImage) await db.prepare('UPDATE custom_cards SET image=NULL, image_type=NULL WHERE id=?').run(row.id);
+    await saveVersion(row.id, row.status, row.note);
+    return true;
+  }, { lock: uid });
+  if (!ok) return res.status(400).json({ error: `골드가 부족해요. (${price}골드 필요)` });
+  const r2 = await rowById(row.id);
   const card = syncPool(r2);
-  res.json({ card, item: rowOut(r2, true), wallet: walletOut(ensureWallet(uid)) });
+  res.json({ card, item: await rowOut(r2, true), wallet: walletOut(await ensureWallet(uid)) });
 });
 
 // 카드 그림 (<img> 가 로그인 쿠키를 같이 보내므로 게임·승인 페이지에서 그대로 보인다)
-router.get('/customcards/:id/art', (req, res) => {
-  const r = db.prepare('SELECT image, image_type FROM custom_cards WHERE id=?').get(Number(req.params.id));
+router.get('/customcards/:id/art', async (req, res) => {
+  const id = Number(req.params.id); if (!Number.isInteger(id)) return res.status(404).end();
+  const r = await db.prepare('SELECT image, image_type FROM custom_cards WHERE id=?').get(id);
   if (!r || !r.image_type) return res.status(404).end();
   res.set('Cache-Control', 'public, max-age=86400'); res.type(r.image_type).send(Buffer.from(r.image));
 });
 
-router.get('/customcards/img/:id', (req, res) => {             // 소환수 그림
-  const r = db.prepare('SELECT image, image_type FROM custom_card_images WHERE id=?').get(Number(req.params.id));
+router.get('/customcards/img/:id', async (req, res) => {       // 소환수 그림
+  const id = Number(req.params.id); if (!Number.isInteger(id)) return res.status(404).end();
+  const r = await db.prepare('SELECT image, image_type FROM custom_card_images WHERE id=?').get(id);
   if (!r) return res.status(404).end();
   res.set('Cache-Control', 'public, max-age=86400'); res.type(r.image_type).send(Buffer.from(r.image));
 });
 
 // ---------- 개발자: 승인 페이지 (review.html) ----------
-router.get('/customcards/admin/list', requireAdmin, (req, res) => {
+router.get('/customcards/admin/list', requireAdmin, async (req, res) => {
   res.set('Cache-Control', 'no-store');
-  const rows = db.prepare(`SELECT ${COLS} FROM custom_cards ORDER BY (status='pending') DESC, COALESCE(requested_at, created_at) DESC LIMIT 300`).all();
-  const counts = {}; for (const r of db.prepare('SELECT status, COUNT(*) AS n FROM custom_cards GROUP BY status').all()) counts[r.status] = r.n;
-  res.json({ cards: rows.map(r => rowOut(r, 'versions')), counts });
+  const rows = await db.prepare(SEL_COLS + ` ORDER BY (c.status='pending') DESC, COALESCE(c.requested_at, c.created_at) DESC LIMIT 300`).all();
+  const counts = {}; for (const r of await db.prepare('SELECT status, COUNT(*) AS n FROM custom_cards GROUP BY status').all()) counts[r.status] = r.n;
+  res.json({ cards: await allOut(rows, 'versions'), counts });
 });
-router.post('/customcards/admin/:id/recheck', requireAdmin, (req, res) => {
-  const row = db.prepare('SELECT * FROM custom_cards WHERE id=?').get(Number(req.params.id));
+router.post('/customcards/admin/:id/recheck', requireAdmin, async (req, res) => {
+  const row = await rowById(Number(req.params.id));
   if (!row) return res.status(404).json({ error: '없는 카드예요.' });
   const check = autoCheck(cardOf(row), 10);
-  db.prepare('UPDATE custom_cards SET check_json=? WHERE id=?').run(JSON.stringify(check), row.id);
+  await db.prepare('UPDATE custom_cards SET check_json=? WHERE id=?').run(JSON.stringify(check), row.id);
   res.json({ check });
 });
-router.post('/customcards/admin/:id/review', requireAdmin, (req, res) => {
+router.post('/customcards/admin/:id/review', requireAdmin, async (req, res) => {
   const decision = req.body && req.body.decision;
   if (!['approved', 'rejected'].includes(decision)) return res.status(400).json({ error: 'decision 은 approved 또는 rejected 예요.' });
-  const row = db.prepare('SELECT * FROM custom_cards WHERE id=?').get(Number(req.params.id));
+  const row = await rowById(Number(req.params.id));
   if (!row) return res.status(404).json({ error: '없는 카드예요.' });
   const note = String((req.body && req.body.note) || '').replace(/[\u0000-\u001f]/g, ' ').slice(0, 300);
-  db.prepare('UPDATE custom_cards SET status=?, note=?, reviewed_at=? WHERE id=?').run(decision, note || null, Date.now(), row.id);
-  const r2 = db.prepare('SELECT * FROM custom_cards WHERE id=?').get(row.id); syncPool(r2);
-  res.json({ item: rowOut(r2, true) });
+  await db.prepare('UPDATE custom_cards SET status=?, note=?, reviewed_at=?, updated_at=? WHERE id=?').run(decision, note || null, Date.now(), Date.now(), row.id);
+  const r2 = await rowById(row.id); syncPool(r2);
+  res.json({ item: await rowOut(r2, true) });
 });
 
 // ---------- 개발자: 골드 수정 ----------
 //   GET  /customcards/admin/users?q=   유저 목록 (닉네임·아이디·골드)
 //   POST /customcards/admin/gold {userId, gold}  골드를 이 값으로   |  {userId, add}  더하기(빼기)
 //   지갑 저장 번호(rev)를 올리므로, 그 유저가 게임을 켜 둔 채라면 새로고침해야 한다 (자기 자신은 응답의 wallet 을 화면이 바로 받아 쓴다)
-router.get('/customcards/admin/users', requireAdmin, (req, res) => {
+router.get('/customcards/admin/users', requireAdmin, async (req, res) => {
   res.set('Cache-Control', 'no-store');
   const qq = '%' + String(req.query.q || '').replace(/[%_]/g, '') + '%';
-  const rows = db.prepare(`SELECT u.id, u.username, u.nickname, u.is_admin, COALESCE(w.gold, 0) AS gold, w.user_id AS has_wallet
-    FROM users u LEFT JOIN wallets w ON w.user_id=u.id WHERE u.username LIKE ? OR COALESCE(u.nickname,'') LIKE ? ORDER BY u.id LIMIT 100`).all(qq, qq);
-  const log = db.prepare(`SELECT g.at, g.before, g.after, COALESCE(a.nickname,a.username) AS admin, COALESCE(u.nickname,u.username) AS user
+  const rows = await db.prepare(`SELECT u.id, u.username, u.nickname, u.is_admin, COALESCE(w.gold, 0) AS gold, w.user_id AS has_wallet
+    FROM users u LEFT JOIN wallets w ON w.user_id=u.id WHERE u.username ILIKE ? OR COALESCE(u.nickname,'') ILIKE ? ORDER BY u.id LIMIT 100`).all(qq, qq);
+  const log = await db.prepare(`SELECT g.at, g.before, g.after, COALESCE(a.nickname,a.username) AS admin, COALESCE(u.nickname,u.username) AS "user"
     FROM gold_log g JOIN users a ON a.id=g.admin_id JOIN users u ON u.id=g.user_id ORDER BY g.id DESC LIMIT 20`).all();
   res.json({ users: rows.map(r => ({ id: r.id, username: r.username, nickname: r.nickname, isAdmin: !!r.is_admin, gold: r.gold })), log, me: req.user.id });
 });
-router.post('/customcards/admin/gold', requireAdmin, (req, res) => {
+router.post('/customcards/admin/gold', requireAdmin, async (req, res) => {
   const b = req.body || {}, uid = Number(b.userId);
-  if (!Number.isInteger(uid) || !db.prepare('SELECT 1 FROM users WHERE id=?').get(uid)) return res.status(404).json({ error: '없는 유저예요.' });
-  const before = ensureWallet(uid).gold;
+  if (!Number.isInteger(uid) || !(await db.prepare('SELECT 1 FROM users WHERE id=?').get(uid))) return res.status(404).json({ error: '없는 유저예요.' });
+  const before = (await ensureWallet(uid)).gold;
   let after = b.gold !== undefined ? Number(b.gold) : before + Number(b.add);
   if (!Number.isFinite(after)) return res.status(400).json({ error: '숫자를 입력해 주세요.' });
   after = Math.max(0, Math.min(10000000, Math.round(after)));
-  db.prepare('UPDATE wallets SET gold=?, rev=rev+1, updated_at=? WHERE user_id=?').run(after, Date.now(), uid);
-  db.prepare('INSERT INTO gold_log(admin_id,user_id,before,after,at) VALUES (?,?,?,?,?)').run(req.user.id, uid, before, after, Date.now());
-  res.json({ userId: uid, before, after, wallet: walletOut(ensureWallet(uid)) });
+  await db.prepare('UPDATE wallets SET gold=?, rev=rev+1, updated_at=? WHERE user_id=?').run(after, Date.now(), uid);
+  await db.prepare('INSERT INTO gold_log(admin_id,user_id,before,after,at) VALUES (?,?,?,?,?)').run(req.user.id, uid, before, after, Date.now());
+  res.json({ userId: uid, before, after, wallet: walletOut(await ensureWallet(uid)) });
 });
 
-module.exports = { router, unapprovedIn, unapprovedInDeckOf, autoCheck, cardOf };
+module.exports = { router, unapprovedIn, unapprovedInDeckOf, autoCheck, cardOf, refreshPool };

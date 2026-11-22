@@ -1,5 +1,5 @@
 // pvpclient.js — 유저 대전 (화면 쪽).  로드 순서: pvp.js → … → ui.js → pvpclient.js
-//  - 서버가 판을 들고 있다. 이 파일은 (1) SSE 스트림으로 서버 메시지를 받고 (2) 내 행동을 POST 로 보내고
+//  - 서버가 판을 들고 있다. 이 파일은 (1) 실시간 통로(Supabase Realtime / 롱 폴링)로 서버 메시지를 받고 (2) 내 행동을 POST 로 보내고
 //    (3) 받은 "내 시점 화면(view) + 이벤트"를 기존 화면 코드(ui.js 의 playEvents · render)로 그려 줄 뿐이다.
 //  - 상대 AI 를 브라우저에서 돌리는 기존 대전과 달리, 여기서는 판 상태를 브라우저가 계산하지 않는다.
 //  - ui.js 의 전역(MY·OPP·view·game·ui·Host·render·playEvents 등)을 그대로 쓴다.
@@ -7,7 +7,7 @@ const PvpClient = (() => {
   'use strict';
   const J = { 'Content-Type': 'application/json' };
   const S = {
-    es: null, esOpen: false, want: false, retryMs: 0, replaced: false,   // 실시간 연결(v148 웹소켓) / 화면에서 필요로 하는지
+    es: null, esOpen: false, want: false, retryMs: 0, replaced: false,   // 실시간 연결(hello + 구독) / 화면에서 필요로 하는지
     status: null, cfg: null,                              // 서버가 알려 준 상태(전적·대기 인원…)와 시간 설정
     matchId: null, lastSeq: -1, over: false,              // 지금 화면에 그리고 있는 판
     chain: Promise.resolve(),                             // 서버 메시지는 순서대로 하나씩 처리한다 (연출이 끝난 뒤 다음 것)
@@ -45,26 +45,81 @@ const PvpClient = (() => {
     el.textContent = text; el.classList.toggle('bad', !!bad); el.style.display = 'block';
   }
 
-  // ---------- 실시간 통로 (v148 웹소켓) ----------
-  //  예전엔 SSE(EventSource)였지만 Cloudflare Quick Tunnel(trycloudflare.com)이 SSE 본문을 붙잡아 두어
-  //  서버 상태가 오지 않았다(→ '상대 찾기' 버튼이 잠김). 웹소켓은 터널을 그대로 통과한다.
-  //  서버 → 화면 메시지는 예전과 같은 JSON. 화면 → 서버 행동은 지금처럼 POST.
-  //  웹소켓은 끊겨도 저절로 다시 붙지 않으므로 여기서 직접 다시 붙는다 (1초 → 최대 5초 간격).
-  const wsUrl = () => (location.protocol === 'https:' ? 'wss://' : 'ws://') + location.host + '/api/pvp/ws';
+  // ---------- 실시간 통로 (Vercel 판: Supabase Realtime / 내 컴퓨터: 롱 폴링) ----------
+  //  예전엔 서버가 웹소켓을 계속 붙잡고 있었지만, Vercel 서버(함수)는 요청이 끝나면 꺼진다. 그래서
+  //   1) POST /api/pvp/hello 로 "이 탭(CID)이 붙었다"고 알리고 지금 상태를 받는다
+  //   2) 서버가 알려 준 통로를 구독한다 — supabase: Supabase Realtime 채널 / poll: GET /api/pvp/poll 롱 폴링
+  //   3) 10초마다(판 도중엔 5초) POST /api/pvp/ping — 살아 있다는 신호이자 서버 시계(턴 제한·끊김 처리)
+  //  서버 → 화면 메시지 모양은 예전과 같다 (onMsg). 화면 → 서버 행동은 지금처럼 POST.
+  const CID = (() => {                                                   // 탭 번호 (새로고침해도 같은 탭이면 그대로)
+    try { let c = sessionStorage.getItem('cdTabId'); if (!c) { c = Math.random().toString(36).slice(2, 10) + Date.now().toString(36); sessionStorage.setItem('cdTabId', c); } return c; }
+    catch (_) { return Math.random().toString(36).slice(2, 12); }
+  })();
+  const SUPABASE_JS = 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js';
+  let sbClient = null, sbLoad = null;
+  function loadSupabase() {
+    if (window.supabase && window.supabase.createClient) return Promise.resolve();
+    return sbLoad || (sbLoad = new Promise((res, rej) => {
+      const sc = document.createElement('script'); sc.src = SUPABASE_JS; sc.async = true;
+      sc.onload = () => res(); sc.onerror = () => { sbLoad = null; rej(new Error('supabase-js 를 불러오지 못했어요')); };
+      document.head.appendChild(sc);
+    }));
+  }
+  // 통로 구독. 끊기면 onDown() 을 부른다. 반환: 정리 함수
+  async function subscribe(link, rt, onDown) {
+    if (rt.mode === 'supabase') {
+      await loadSupabase();
+      if (!sbClient) sbClient = window.supabase.createClient(rt.url, rt.key, { auth: { persistSession: false, autoRefreshToken: false, detectSessionInUrl: false } });
+      const ch = sbClient.channel(rt.topic, { config: { broadcast: { self: false } } });
+      ch.on('broadcast', { event: 'm' }, ({ payload }) => { if (S.es !== link) return; S.lastRx = Date.now(); onMsg(payload); });
+      await new Promise((res, rej) => {
+        let done = false; const t = setTimeout(() => { if (!done) { done = true; rej(new Error('구독 시간 초과')); } }, 10000);
+        ch.subscribe(st => {
+          if (st === 'SUBSCRIBED') { if (!done) { done = true; clearTimeout(t); res(); } }
+          else if (st === 'CHANNEL_ERROR' || st === 'TIMED_OUT' || st === 'CLOSED') { if (!done) { done = true; clearTimeout(t); rej(new Error(st)); } else onDown(); }
+        });
+      });
+      return () => { try { sbClient.removeChannel(ch); } catch (_) {} };
+    }
+    // poll: 롱 폴링 (서버가 한 대일 때)
+    let stop = false, after = rt.after || 0;
+    (async () => {
+      while (!stop && S.es === link) {
+        let r; try { r = await fetch('/api/pvp/poll?after=' + after, { credentials: 'same-origin', cache: 'no-store' }); } catch (_) { r = null; }
+        if (stop || S.es !== link) return;
+        if (!r || !r.ok) { if (r && r.status === 401) { location.replace('/login.html'); return; } onDown(); return; }
+        const d = await r.json().catch(() => null); if (!d) { onDown(); return; }
+        S.lastRx = Date.now(); after = d.last;
+        for (const x of d.msgs || []) onMsg(x.msg);
+      }
+    })();
+    return () => { stop = true; };
+  }
   function open() {
-    S.want = true; S.replaced = false;                    // v148 직접 다시 열면 이 탭이 자리를 되찾는다
+    S.want = true; S.replaced = false;
     if (S.es) return;
     clearTimeout(S.retry);
-    let ws; try { ws = new WebSocket(wsUrl()); } catch (e) { retryLater(); return; }
-    S.es = ws;
-    ws.onopen = () => { if (S.es !== ws) return; S.esOpen = true; S.retryMs = 0; S.lastRx = Date.now(); renderScreen(); if (typeof Friends !== 'undefined') Friends.load(); };
-    ws.onmessage = ev => { if (S.es !== ws) return; S.lastRx = Date.now(); let m; try { m = JSON.parse(ev.data); } catch (_) { return; } onMsg(m); };
-    ws.onclose = () => {
-      if (S.es !== ws) return;                             // 이미 새 연결로 바꾼 뒤에 닫힌 옛 연결
-      S.es = null; S.esOpen = false; renderScreen(); if (S.matchId && !S.over) tickHud();
-      retryLater();
-    };
-    ws.onerror = () => {};                                 // 이어서 onclose 가 온다
+    const link = { off: null }; S.es = link;
+    const down = () => { if (S.es !== link) return; dropLink(); renderScreen(); if (S.matchId && !S.over) tickHud(); retryLater(); };
+    (async () => {
+      let r = await post('/api/pvp/hello', { cid: CID });
+      if (S.es !== link) return;
+      if (!r.ok || !r.data.rt) { down(); return; }
+      try { link.off = await subscribe(link, r.data.rt, down); } catch (e) { console.warn('[pvp] 실시간 통로 연결 실패', e && e.message); down(); return; }
+      if (S.es !== link) { if (link.off) link.off(); return; }
+      if (r.data.rt.mode === 'supabase') {                               // 구독하는 사이에 온 메시지를 놓치지 않게, 구독한 뒤 상태를 한 번 더 받는다
+        const r2 = await post('/api/pvp/hello', { cid: CID }); if (S.es !== link) return;
+        if (r2.ok) r = r2;
+      }
+      S.pingMs = r.data.pingMs || 10000;
+      S.esOpen = true; S.retryMs = 0; S.lastRx = Date.now(); S.pingFail = 0;
+      (r.data.msgs || []).forEach(onMsg);
+      renderScreen(); if (typeof Friends !== 'undefined') Friends.load();
+    })().catch(e => { console.error('[pvp]', e); down(); });
+  }
+  function dropLink() {
+    const link = S.es; S.es = null; S.esOpen = false;
+    if (link && link.off) { try { link.off(); } catch (_) {} }
   }
   function retryLater() {
     if (!S.want || S.replaced) return;
@@ -76,40 +131,46 @@ const PvpClient = (() => {
       open();
     }, S.retryMs);
   }
-  function close() {
-    S.want = false; clearTimeout(S.retry);
-    const ws = S.es; S.es = null; S.esOpen = false;
-    if (ws) { try { ws.close(); } catch (_) {} }
-  }
-  function resync() { const ws = S.es; S.es = null; S.esOpen = false; if (ws) { try { ws.close(); } catch (_) {} } if (S.want) open(); }   // 다시 접속하면 서버가 현재 상태를 통째로 보내 준다
+  function bye() { try { fetch('/api/pvp/bye', { method: 'POST', headers: J, body: JSON.stringify({ cid: CID }), credentials: 'same-origin', keepalive: true }); } catch (_) {} }
+  function close() { S.want = false; clearTimeout(S.retry); if (S.es) bye(); dropLink(); }
+  function resync() { dropLink(); if (S.want) open(); }                  // 다시 hello 하면 서버가 현재 상태를 통째로 보내 준다
 
-  // ---------- v153 연결 살아 있는지 확인 (휴대폰 대비) ----------
-  //  휴대폰은 화면을 끄거나 다른 앱에 갔다 오면 웹소켓이 "열려 있는 척"만 하고 실제로는 끊겨 있는 일이 흔하다.
-  //  그러면 서버는 나를 오프라인으로 보고, 친구가 보낸 대전 신청도 오지 않는다.
-  //  → 20초마다 'ping' 을 보내고 서버의 'pong' 이 45초 넘게 안 오면 다시 붙는다. 화면이 다시 보이면 바로 확인한다.
-  S.lastRx = 0;
-  function ping() { const ws = S.es; if (ws && ws.readyState === 1) { try { ws.send('ping'); } catch (_) {} } }
+  // ---------- ping: 살아 있다는 신호 + 서버 시계 ----------
+  //  서버(Vercel)에는 계속 도는 시계가 없다. 화면이 보내는 ping 이 올 때 서버가 턴 제한 시간·끊김을 처리한다.
+  //  그래서 판 도중에는 자주, 제한 시간이 막 지났으면 바로 보낸다.
+  S.lastRx = 0; S.lastPing = 0; S.pingMs = 10000; S.pingFail = 0;
+  async function ping() {
+    if (!S.es || !S.esOpen || S.pinging) return;
+    S.pinging = true; S.lastPing = Date.now();
+    try {
+      const r = await post('/api/pvp/ping', { cid: CID });
+      if (!r.ok) { if (r.status !== 429 && ++S.pingFail >= 2) { S.pingFail = 0; resync(); } return; }
+      S.pingFail = 0;
+      if (r.data.resync) (r.data.msgs || []).forEach(onMsg);           // 서버가 이 탭을 잊었었다 (오래 잠듦) → 지금 상태를 다시 받음
+    } finally { S.pinging = false; }
+  }
   setInterval(() => {
-    if (!S.want || S.replaced) return;
-    if (!S.es) return;                                                       // 다시 붙는 중 (retryLater)
-    if (S.esOpen && S.lastRx && Date.now() - S.lastRx > 45000) { resync(); return; }
-    ping();
-  }, 20000);
+    if (!S.want || S.replaced || !S.esOpen) return;
+    const inMatch = !!S.matchId && !S.over, now = Date.now();
+    const every = inMatch ? Math.min(5000, S.pingMs) : S.pingMs;
+    const due = inMatch && ((S.deadline && now > S.deadline + 800) || (S.phase === 'mulligan' && S.mullDeadline && now > S.mullDeadline + 800)
+      || (S.oppOffAt && now - S.oppOffAt > S.reconnectMs + 800));          // 시간이 다 됐으면 바로 (서버가 처리하게)
+    if (now - S.lastPing >= every || (due && now - S.lastPing > 1500)) ping();
+  }, 500);
   function wake() {                                                          // 화면이 다시 보일 때 · 네트워크가 돌아왔을 때
     if (document.visibilityState === 'hidden') return;
     if (S.replaced) { S.replaced = false; open(); renderScreen(); return; }  // 다른 탭(기기)에 넘겼던 자리를, 지금 보고 있는 이 화면이 되찾는다
     if (!S.want) return;
     if (!S.es) { clearTimeout(S.retry); S.retryMs = 0; open(); return; }
-    const sent = Date.now(); ping();
-    setTimeout(() => { if (S.es && S.lastRx < sent) resync(); }, 4000);   // 4초 안에 답이 없으면 끊긴 연결
+    ping();
   }
   document.addEventListener('visibilitychange', wake);
   addEventListener('pageshow', e => { if (e.persisted) wake(); });            // 뒤로 가기 캐시에서 돌아옴
   addEventListener('online', wake);
+  addEventListener('pagehide', () => { if (S.es) bye(); });                   // 탭을 닫으면 바로 오프라인으로
 
   function onMsg(m) {
     if (!m || typeof m !== 'object') return;
-    if (m.t === 'pong') return;                                           // v153 연결 확인 답
     if (m.t === 'status') {
       S.status = m; if (m.cfg) S.cfg = m.cfg;
       if (m.state === 'queue' && !S.queuedAt) S.queuedAt = Date.now();
@@ -130,7 +191,8 @@ const PvpClient = (() => {
     } else if (m.t === 'error') {
       showMsg(m.error || '문제가 생겼어요.');
     } else if (m.t === 'replaced') {                                      // v148 같은 계정의 새 탭(기기)이 자리를 가져갔다 → 다시 붙지 않는다 (서로 밀어내기 방지)
-      close(); S.replaced = true;
+      if (m.cid && m.cid !== CID) return;                                 // 다른 탭 이야기
+      S.want = false; clearTimeout(S.retry); dropLink(); S.replaced = true;
       renderScreen(); if (S.matchId && !S.over) tickHud();
     }
   }

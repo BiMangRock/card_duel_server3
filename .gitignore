@@ -1,8 +1,9 @@
 node_modules/
-data/
+/data/
 *.db
 *.db-wal
 *.db-shm
 .env
 .env.*
 .vercel/
+!.env.example

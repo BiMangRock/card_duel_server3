@@ -1,221 +1,182 @@
-// db.js — SQLite 연결과 테이블 생성.
-// DB 파일은 data/game.db (환경변수 DB_PATH 로 변경 가능). 이 파일만 백업하면 된다.
+// db.js — PostgreSQL 연결 (Supabase). 예전 SQLite(node:sqlite) 코드와 비슷하게 쓸 수 있게 감싼다.
+//
+//   await db.prepare('SELECT * FROM users WHERE id=?').get(id)    → 첫 줄 (없으면 undefined)
+//   await db.prepare('SELECT …').all(a, b)                         → 줄 배열
+//   await db.prepare('UPDATE …').run(a, b)                         → { changes }   (INSERT … RETURNING id 는 .get() 으로)
+//   await db.exec('여러 문장;')                                     → 결과 없음
+//   await db.tx(async () => { … })                                 → 트랜잭션. 안에서 부르는 db.* 는 전부 같은 연결을 쓴다
+//   await db.tx(async () => { … }, { lock: uid })                   → 같은 lock 번호끼리는 한 번에 하나씩 (예전 BEGIN IMMEDIATE 대신)
+//
+//  '?' 자리는 PostgreSQL 의 $1, $2 … 로 바꿔서 보낸다 (작은따옴표 안의 ? 는 그대로).
+//
+//  어디에 붙나:
+//   - DATABASE_URL 이 있으면 그 PostgreSQL (Supabase 의 "Transaction pooler" 주소 권장, Vercel 에서 쓸 때)
+//   - 없으면 PGlite (PostgreSQL 을 Node 안에서 돌리는 것). 내 컴퓨터에서 바로 켜 볼 때 · 테스트용
+//       DB_PATH=':memory:' → 메모리 (테스트) / 아니면 data/pglite 폴더에 저장
+require('./env');
 const fs = require('fs');
 const path = require('path');
-const { DatabaseSync } = require('node:sqlite');   // Node 내장 SQLite (별도 설치·컴파일 불필요, Node 22.13 이상)
+const { AsyncLocalStorage } = require('async_hooks');
 
-const DB_PATH = process.env.DB_PATH || path.join(__dirname, '..', 'data', 'game.db');
-if (DB_PATH !== ':memory:') fs.mkdirSync(path.dirname(DB_PATH), { recursive: true });
+const als = new AsyncLocalStorage();            // 지금 트랜잭션 중이면 그 연결
+const SCHEMA = fs.readFileSync(path.join(__dirname, 'schema.sql'), 'utf8');
 
-const db = new DatabaseSync(DB_PATH);
-db.exec('PRAGMA journal_mode = WAL;');
-db.exec('PRAGMA foreign_keys = ON;');
+// ---------- '?' → $n ----------
+const sqlCache = new Map();
+function toPg(sql) {
+  let out = sqlCache.get(sql);
+  if (out) return out;
+  let n = 0, q = false; out = '';
+  for (let i = 0; i < sql.length; i++) {
+    const ch = sql[i];
+    if (ch === "'") q = !q;
+    out += (ch === '?' && !q) ? '$' + (++n) : ch;
+  }
+  if (sqlCache.size < 2000) sqlCache.set(sql, out);
+  return out;
+}
+// PGlite 는 bytea 를 Uint8Array 로 준다 → express 가 그대로 보낼 수 있게 Buffer 로
+function fixRows(rows) {
+  for (const r of rows) for (const k in r) { const v = r[k]; if (v instanceof Uint8Array && !Buffer.isBuffer(v)) r[k] = Buffer.from(v.buffer, v.byteOffset, v.byteLength); }
+  return rows;
+}
+const toParam = v => v === undefined ? null : typeof v === 'boolean' ? (v ? 1 : 0) : v;
 
-db.exec(`
-CREATE TABLE IF NOT EXISTS users (
-  id          INTEGER PRIMARY KEY AUTOINCREMENT,
-  username    TEXT    NOT NULL UNIQUE COLLATE NOCASE,
-  pw_hash     TEXT    NOT NULL,                       -- "scrypt$N$r$p$salt$hash" 형식
-  created_at  INTEGER NOT NULL,                       -- epoch ms
-  last_login  INTEGER
-);
+// ---------- 드라이버 ----------
+//  driver.query(sql, params) → {rows, rowCount}    driver.begin() → {query, end(ok)}
+function pgDriver(url) {
+  const pg = require('pg');
+  pg.types.setTypeParser(20, v => (v === null ? null : Number(v)));     // BIGINT·COUNT(*) → 숫자 (epoch ms 는 안전한 정수 범위)
+  pg.types.setTypeParser(1700, v => (v === null ? null : Number(v)));   // NUMERIC → 숫자
+  const pool = new pg.Pool({
+    connectionString: url,
+    max: Number(process.env.DB_POOL_MAX) || 5,
+    idleTimeoutMillis: 10000,
+    ssl: /localhost|127\.0\.0\.1/.test(url) || process.env.DB_SSL === '0' ? false : { rejectUnauthorized: false },
+  });
+  pool.on('error', e => console.error('[db] 연결 오류', e && e.message));
+  return {
+    kind: 'pg',
+    query: (sql, params) => pool.query(sql, params),
+    async begin() {
+      const c = await pool.connect();
+      try { await c.query('BEGIN'); } catch (e) { c.release(true); throw e; }
+      return { query: (sql, params) => c.query(sql, params), async end(ok) { try { await c.query(ok ? 'COMMIT' : 'ROLLBACK'); c.release(); } catch (e) { c.release(true); if (ok) throw e; } } };
+    },
+    close: () => pool.end(),
+  };
+}
+function pgliteDriver(where) {
+  // PGlite 는 연결이 하나뿐이다 → 트랜잭션이 열려 있는 동안 다른 요청의 쿼리가 끼어들지 않게 차례를 지킨다
+  let ready = null, chain = Promise.resolve();
+  const open = () => ready || (ready = (async () => {
+    const mod = '@electric-sql/pglite';                     // 변수로 불러서 Vercel 함수 묶음에는 안 들어가게 (Vercel 에서는 DATABASE_URL 을 쓴다)
+    const { PGlite } = await import(mod);
+    if (where !== 'memory://') fs.mkdirSync(where, { recursive: true });
+    const pg = new PGlite(where === 'memory://' ? undefined : where, { parsers: { 20: Number, 1700: Number } });
+    await pg.waitReady;
+    return pg;
+  })());
+  const lock = () => { let release; const p = new Promise(r => { release = r; }); const prev = chain; chain = chain.then(() => p); return prev.then(() => release); };
+  const run = async (pg, sql, params) => { const r = await pg.query(sql, params); return { rows: r.rows, rowCount: r.affectedRows ?? r.rows.length }; };
+  return {
+    kind: 'pglite',
+    async query(sql, params) { const pg = await open(); const release = await lock(); try { return await run(pg, sql, params); } finally { release(); } },
+    async exec(sql) { const pg = await open(); const release = await lock(); try { await pg.exec(sql); } finally { release(); } },
+    async begin() {
+      const pg = await open(); const release = await lock();
+      try { await pg.query('BEGIN'); } catch (e) { release(); throw e; }
+      return { query: (sql, params) => run(pg, sql, params), async end(ok) { try { await pg.query(ok ? 'COMMIT' : 'ROLLBACK'); } finally { release(); } } };
+    },
+    close: async () => { if (ready) { const pg = await ready; await pg.close(); } },
+  };
+}
 
-CREATE TABLE IF NOT EXISTS sessions (
-  token_hash  TEXT    PRIMARY KEY,                    -- 쿠키 토큰의 sha256 (DB가 유출돼도 토큰을 못 쓰게)
-  user_id     INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-  created_at  INTEGER NOT NULL,
-  expires_at  INTEGER NOT NULL
-);
-CREATE INDEX IF NOT EXISTS idx_sessions_user    ON sessions(user_id);
-CREATE INDEX IF NOT EXISTS idx_sessions_expires ON sessions(expires_at);
+let driver = null;
+function getDriver() {
+  if (driver) return driver;
+  const url = process.env.DATABASE_URL || process.env.POSTGRES_URL;
+  if (url) driver = pgDriver(url);
+  else if (process.env.VERCEL) throw new Error('DATABASE_URL 이 없어요. Vercel 프로젝트 설정 → Environment Variables 에 Supabase 주소를 넣어 주세요.');
+  else {
+    const p = process.env.DB_PATH;
+    driver = pgliteDriver(p === ':memory:' ? 'memory://' : (p || path.join(__dirname, '..', 'data', 'pglite')));
+  }
+  return driver;
+}
 
--- 3단계: 계정별 게임 저장 데이터
-CREATE TABLE IF NOT EXISTS wallets (                    -- 골드·오늘의 보상 풀·배팅 중인 금액
-  user_id     INTEGER PRIMARY KEY REFERENCES users(id) ON DELETE CASCADE,
-  gold        INTEGER NOT NULL,
-  pool        REAL    NOT NULL,
-  pool_day    TEXT    NOT NULL,
-  bet         INTEGER NOT NULL DEFAULT 0,
-  rev         INTEGER NOT NULL DEFAULT 1,               -- 저장할 때마다 +1 (다른 기기와 충돌 감지용)
-  updated_at  INTEGER NOT NULL
-);
-CREATE TABLE IF NOT EXISTS decks (                      -- 내 덱 (카드 이름 30개의 JSON 배열)
-  user_id     INTEGER PRIMARY KEY REFERENCES users(id) ON DELETE CASCADE,
-  deck_json   TEXT    NOT NULL,
-  updated_at  INTEGER NOT NULL
-);
--- 4단계: 카드 컬렉션
-CREATE TABLE IF NOT EXISTS collection (                 -- 내가 가진 카드 (카드 이름 + 장수)
-  user_id     INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-  card_name   TEXT    NOT NULL,
-  count       INTEGER NOT NULL,
-  PRIMARY KEY (user_id, card_name)
-);
-CREATE TABLE IF NOT EXISTS collection_init (            -- 스타터 카드를 이미 받은 계정 (한 번만 지급)
-  user_id     INTEGER PRIMARY KEY REFERENCES users(id) ON DELETE CASCADE,
-  granted_at  INTEGER NOT NULL
-);
--- 5단계: 상점
-CREATE TABLE IF NOT EXISTS shop_state (                 -- 천장 카운터 (특급 이상 / 전설이 안 나온 연속 팩 수)
-  user_id       INTEGER PRIMARY KEY REFERENCES users(id) ON DELETE CASCADE,
-  since_epic    INTEGER NOT NULL DEFAULT 0,
-  since_legend  INTEGER NOT NULL DEFAULT 0,
-  packs_opened  INTEGER NOT NULL DEFAULT 0
-);
-CREATE TABLE IF NOT EXISTS pack_log (                   -- 개봉 기록 (팩 1개당 한 줄). 문의·부정 확인용
-  id          INTEGER PRIMARY KEY AUTOINCREMENT,
-  user_id     INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-  opened_at   INTEGER NOT NULL,
-  price       INTEGER NOT NULL,
-  refund      INTEGER NOT NULL,                         -- 이 팩의 중복 환급 합계
-  cards_json  TEXT    NOT NULL,                         -- [{name,rarity,isNew,dup,refund}, …]
-  pity_hit    TEXT                                      -- 'epic' | 'legend' | NULL (천장으로 확정된 팩인지)
-);
-CREATE INDEX IF NOT EXISTS idx_pack_log_user ON pack_log(user_id, id);
-CREATE TABLE IF NOT EXISTS adventure_progress (         -- 보스 첫 클리어 기록
-  user_id     INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-  boss_id     TEXT    NOT NULL,
-  cleared_at  INTEGER NOT NULL,
-  PRIMARY KEY (user_id, boss_id)
-);
--- 6단계: 유저 대전 기록 (한 판당 한 줄). 보상·하루 한도·전적 계산의 기준
-CREATE TABLE IF NOT EXISTS pvp_matches (
-  id          INTEGER PRIMARY KEY AUTOINCREMENT,
-  match_id    TEXT    NOT NULL,
-  p0          INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-  p1          INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-  winner      INTEGER,                                  -- 이긴 사람의 user id (무승부·무효면 NULL)
-  reason      TEXT    NOT NULL,                         -- normal | surrender | timeout | disconnect | turnlimit | void
-  turns       INTEGER NOT NULL,
-  reward      INTEGER NOT NULL DEFAULT 0,               -- 승자에게 실제로 지급된 골드
-  day         TEXT    NOT NULL,                         -- 하루 한도 기준 날짜 (새벽 5시 기준, Economy.dayKey)
-  started_at  INTEGER NOT NULL,
-  ended_at    INTEGER NOT NULL
-);
-CREATE INDEX IF NOT EXISTS idx_pvp_winner_day ON pvp_matches(winner, day);
-CREATE INDEX IF NOT EXISTS idx_pvp_pair_day   ON pvp_matches(p0, p1, day);
-`);
+// ---------- 테이블 만들기 (서버가 처음 쿼리할 때 한 번) ----------
+let initP = null;
+function init() {
+  if (!initP) initP = (async () => {
+    const d = getDriver();
+    if (process.env.DB_SKIP_SCHEMA === '1') return;
+    if (d.exec) await d.exec(SCHEMA);
+    else {
+      // 서버 여러 대가 동시에 켜져도 한 대만 만들게 잠근다
+      const t = await d.begin(); let ok = false;
+      try { await t.query('SELECT pg_advisory_xact_lock(7340001)'); await t.query(SCHEMA); ok = true; } finally { await t.end(ok); }
+    }
+  })().catch(e => { initP = null; throw e; });
+  return initP;
+}
 
-// v116: 개발자 권한 + 서버 공용 설정 (보스 목록 등)
-if (!db.prepare('PRAGMA table_info(users)').all().some(c => c.name === 'is_admin'))
-  db.exec('ALTER TABLE users ADD COLUMN is_admin INTEGER NOT NULL DEFAULT 0');
-db.exec(`
-CREATE TABLE IF NOT EXISTS app_config (                 -- 모든 유저가 같이 쓰는 설정 (key 하나당 JSON 하나). 지금은 'bosses' 만 사용
-  key         TEXT PRIMARY KEY,
-  value       TEXT NOT NULL,
-  updated_at  INTEGER NOT NULL
-);
-`);
+async function query(sql, params) {
+  const t = als.getStore();
+  if (t) return t.query(toPg(sql), params.map(toParam));
+  await init();
+  return getDriver().query(toPg(sql), params.map(toParam));
+}
 
-// v117: 모험 덱 (모험 전용 카드를 넣을 수 있는 두 번째 덱). 없으면 일반 덱으로 모험에 나간다
-db.exec(`
-CREATE TABLE IF NOT EXISTS adventure_decks (
-  user_id     INTEGER PRIMARY KEY REFERENCES users(id) ON DELETE CASCADE,
-  deck_json   TEXT    NOT NULL,
-  updated_at  INTEGER NOT NULL
-);
-`);
+function prepare(sql) {
+  return {
+    async get(...a) { const r = await query(sql, a); return r.rows.length ? fixRows(r.rows)[0] : undefined; },
+    async all(...a) { const r = await query(sql, a); return fixRows(r.rows); },
+    async run(...a) { const r = await query(sql, a); return { changes: r.rowCount || 0, rows: r.rows }; },
+  };
+}
+async function exec(sql) {
+  const t = als.getStore();
+  if (t) { await t.query(sql, []); return; }
+  await init();
+  const d = getDriver();
+  if (d.exec) await d.exec(sql); else await d.query(sql, []);
+}
 
-// v117: 모험 보상 묶음 (첫 클리어 때 만든 3묶음. 고르기 전까지 남아 있어서 창을 닫아도 나중에 고를 수 있다)
-db.exec(`
-CREATE TABLE IF NOT EXISTS adventure_offers (
-  user_id      INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-  boss_id      TEXT    NOT NULL,
-  bundles_json TEXT    NOT NULL,                         -- [[카드 이름…], …]
-  created_at   INTEGER NOT NULL,
-  picked_index INTEGER,                                  -- 고른 묶음 번호 (아직이면 NULL)
-  picked_at    INTEGER,
-  PRIMARY KEY (user_id, boss_id)
-);
-`);
+// 트랜잭션. 이미 트랜잭션 안이면 SAVEPOINT 로 이어서 쓴다
+//  → 안쪽 db.tx 가 에러를 던지면 안쪽에서 한 일만 취소되고, 바깥은 try/catch 로 받아서 계속할 수 있다
+//    (PostgreSQL 은 트랜잭션 안에서 에러가 한 번 나면 ROLLBACK 전까지 다른 쿼리를 모두 거부하기 때문)
+let spN = 0;
+async function tx(fn, opts = {}) {
+  const cur = als.getStore();
+  if (cur) {
+    const sp = 'sp' + (++spN);
+    await cur.query('SAVEPOINT ' + sp, []);
+    try {
+      if (opts.lock != null) await cur.query('SELECT pg_advisory_xact_lock($1)', [lockKey(opts.lock)]);
+      const out = await fn();
+      await cur.query('RELEASE SAVEPOINT ' + sp, []);
+      return out;
+    } catch (e) { try { await cur.query('ROLLBACK TO SAVEPOINT ' + sp, []); } catch (_) {} throw e; }
+  }
+  await init();
+  const t = await getDriver().begin();
+  let ok = false;
+  try {
+    if (opts.lock != null) await t.query('SELECT pg_advisory_xact_lock($1)', [lockKey(opts.lock)]);
+    const out = await als.run(t, fn);
+    ok = true;
+    return out;
+  } finally { await t.end(ok); }
+}
+// 잠금 번호: 숫자(user id)는 그대로, 글자는 해시
+function lockKey(k) {
+  if (Number.isInteger(k)) return k;
+  let h = 0; for (const ch of String(k)) h = (h * 31 + ch.codePointAt(0)) | 0;
+  return 1000000000 + Math.abs(h % 1000000000);
+}
 
-// v117: 입학(런) — 챕터마다 하나. 입학할 때의 모험 덱이 잠기고(보상 묶음은 여기에 더해짐), 지거나 졸업·자퇴하면 지운다
-db.exec(`
-CREATE TABLE IF NOT EXISTS adventure_runs (
-  user_id      INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-  chapter      TEXT    NOT NULL,
-  deck_json    TEXT    NOT NULL,                         -- 잠긴 덱 (30장 + 고른 보상 묶음)
-  cleared_json TEXT    NOT NULL DEFAULT '[]',            -- 이번 입학에서 깬 보스 id
-  started_at   INTEGER NOT NULL,
-  PRIMARY KEY (user_id, chapter)
-);
-`);
+// UNIQUE 제약에 걸렸는지 (동시에 같은 아이디로 가입 등)
+const isUnique = e => !!e && (e.code === '23505' || /unique constraint|duplicate key/i.test(String(e.message)));
 
-// v127 랭크전: 계정별 랭크 상태 (rank.js 규칙). 판 기록에는 랭크전 여부
-db.exec(`
-CREATE TABLE IF NOT EXISTS rank_state (
-  user_id      INTEGER PRIMARY KEY REFERENCES users(id) ON DELETE CASCADE,
-  tier         INTEGER NOT NULL DEFAULT 0,               -- 0 브론즈 · 1 실버 · 2 골드 · 3 플래티넘 · 4 다이아 · 5 전설
-  div          INTEGER NOT NULL DEFAULT 3,               -- 단계 3 → 2 → 1 (전설은 0)
-  stars        INTEGER NOT NULL DEFAULT 0,
-  streak       INTEGER NOT NULL DEFAULT 0,               -- 랭크전 연승
-  floor        INTEGER NOT NULL DEFAULT 0,               -- 강등 방지선 (오른 적 있는 가장 높은 등급)
-  legend_wins  INTEGER NOT NULL DEFAULT 0,               -- 전설에서 거둔 승수 (순위 기준)
-  legend_at    INTEGER,                                  -- 전설 도착 시각 (같은 승수면 먼저 온 사람이 위)
-  updated_at   INTEGER NOT NULL
-);
-CREATE INDEX IF NOT EXISTS idx_rank_legend ON rank_state(tier, legend_wins DESC, legend_at);
-`);
-if (!db.prepare('PRAGMA table_info(pvp_matches)').all().some(c => c.name === 'ranked'))
-  db.exec('ALTER TABLE pvp_matches ADD COLUMN ranked INTEGER NOT NULL DEFAULT 0');
-
-// v136 친구 · 닉네임 · 친구 대전
-//  - 닉네임: 아이디와 따로 짓는 이름 (없으면 아이디를 보여 준다). 대소문자 구분 없이 한 명만 쓸 수 있다
-//  - 친구는 양쪽 방향으로 두 줄 저장 (A→B, B→A) → "내 친구" 조회가 단순하다
-//  - 친구 대전 판은 pvp_matches.friendly=1 (보상·랭크·전적에 안 들어감)
-if (!db.prepare('PRAGMA table_info(users)').all().some(c => c.name === 'nickname'))
-  db.exec('ALTER TABLE users ADD COLUMN nickname TEXT');
-if (!db.prepare('PRAGMA table_info(pvp_matches)').all().some(c => c.name === 'friendly'))
-  db.exec('ALTER TABLE pvp_matches ADD COLUMN friendly INTEGER NOT NULL DEFAULT 0');
-db.exec(`
-CREATE UNIQUE INDEX IF NOT EXISTS idx_users_nickname ON users(nickname COLLATE NOCASE) WHERE nickname IS NOT NULL;
-CREATE TABLE IF NOT EXISTS friends (
-  user_id     INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-  friend_id   INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-  since       INTEGER NOT NULL,
-  PRIMARY KEY (user_id, friend_id)
-);
-CREATE TABLE IF NOT EXISTS friend_requests (            -- 보낸 친구 요청 (수락·거절·취소하면 지운다)
-  from_id     INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-  to_id       INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-  created_at  INTEGER NOT NULL,
-  PRIMARY KEY (from_id, to_id)
-);
-CREATE INDEX IF NOT EXISTS idx_friend_req_to ON friend_requests(to_id);
-`);
-
-// v137 리플레이: 판을 다시 만드는 데 필요한 것만 저장 (시드 · 양쪽 덱 · 영웅 능력 · 멀리건 · 행동 목록 → 한 판에 수 KB)
-//  replay_owners: 누구의 "지난 판" 목록에 있는지. 계정마다 최근 PVP.REPLAY_KEEP 판만 남기고, 아무도 안 가진 리플레이는 지운다
-db.exec(`
-CREATE INDEX IF NOT EXISTS idx_pvp_match_id ON pvp_matches(match_id);
-CREATE TABLE IF NOT EXISTS pvp_replays (
-  match_id    TEXT    PRIMARY KEY,
-  data_json   TEXT    NOT NULL,
-  created_at  INTEGER NOT NULL
-);
-CREATE TABLE IF NOT EXISTS replay_owners (
-  user_id     INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-  match_id    TEXT    NOT NULL REFERENCES pvp_replays(match_id) ON DELETE CASCADE,
-  created_at  INTEGER NOT NULL,
-  PRIMARY KEY (user_id, match_id)
-);
-CREATE INDEX IF NOT EXISTS idx_replay_owner_time ON replay_owners(user_id, created_at);
-`);
-
-// v141 친구 채팅: 친구끼리 1:1 메시지. 두 사람 사이마다 최근 CHAT.KEEP 개만 남긴다 (friends-db.js)
-//  pair_key = "작은id:큰id" → 두 사람의 대화를 한 번에 찾는다. read_at 이 NULL 이면 받는 사람이 아직 안 읽음
-db.exec(`
-CREATE TABLE IF NOT EXISTS friend_messages (
-  id          INTEGER PRIMARY KEY AUTOINCREMENT,
-  pair_key    TEXT    NOT NULL,
-  from_id     INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-  to_id       INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-  body        TEXT    NOT NULL,
-  created_at  INTEGER NOT NULL,
-  read_at     INTEGER
-);
-CREATE INDEX IF NOT EXISTS idx_fmsg_pair   ON friend_messages(pair_key, id);
-CREATE INDEX IF NOT EXISTS idx_fmsg_unread ON friend_messages(to_id, read_at);
-`);
-
-module.exports = db;
+module.exports = { prepare, exec, tx, init, isUnique, kind: () => getDriver().kind, close: async () => { if (driver) await driver.close(); driver = null; initP = null; } };
