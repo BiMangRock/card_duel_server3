@@ -1,0 +1,154 @@
+/* uiart.css — v165 이모지·CSS로 그리던 UI를 그림으로 바꾼다. style.css · polish.css · uiskin.css 다음에 읽는다.
+   그림: images/status/*.webp (상태·재화 아이콘) · images/ui/*.webp (버튼·패널·배경·카드 틀·방어도) · images/boss/default.webp */
+
+/* ---------- 줄 안에 들어가는 작은 아이콘 (ICO() 가 만든다) ---------- */
+.ico{display:inline-block; width:1.3em; height:1.3em; vertical-align:-.3em; object-fit:contain; pointer-events:none; filter:drop-shadow(0 1px 1px rgba(0,0,0,.5));}
+.tag .ico{width:1.35em; height:1.35em; vertical-align:-.35em; margin-right:.05em;}
+.float .ico{width:1.45em; height:1.45em; vertical-align:-.38em;}
+/* 지갑: 동전 그림이 글자보다 조금 크게 */
+.walletView .ico, #shopGold .ico{width:1.45em; height:1.45em; vertical-align:-.4em;}
+
+/* 전장 하수인 위 키워드 뱃지: 그림 아이콘은 테두리 없이 그림만 (그림에 금테가 있다) */
+.zone .card .kw span:has(> .ico){padding:0; border:0; background:none; min-width:0; width:19px; height:19px;}
+.zone .card .kw span > .ico{width:100%; height:100%; vertical-align:top; filter:drop-shadow(0 1px 2px rgba(0,0,0,.8));}
+@media (orientation:landscape) and (max-height:540px){ .zone .card .kw span:has(> .ico){width:21px; height:21px;} }
+
+/* ---------- 작은 기능 버튼 ---------- */
+#logToggle:has(img){background:none; border:0; border-radius:0; width:2.3rem; height:2.3rem;}
+#logToggle img{width:100%; height:100%; object-fit:contain; filter:drop-shadow(0 2px 3px rgba(0,0,0,.6));}
+#fsBtn .ico-btn{width:1.35em; height:1.35em; vertical-align:-.35em; filter:none;}
+#rotateHint .rh-icon.img{animation:none;}
+#rotateHint .rh-icon.img img{width:6rem; height:6rem; object-fit:contain; filter:drop-shadow(0 4px 10px rgba(0,0,0,.6));}
+
+/* 가이드 조작법 그림 */
+.ico-ctl{display:block; width:2.6rem; height:2.6rem; object-fit:contain; margin:0 auto;}
+.gp-arrow .ico-ctl{width:3rem; height:3rem;}
+.step > i:has(.ico-ctl){font-style:normal;}
+
+/* ---------- 영웅 방어도 방패 ---------- */
+.armor-shield{background:url(/images/ui/armor.webp) center/contain no-repeat; clip-path:none; filter:drop-shadow(0 1px 3px rgba(0,0,0,.7));
+  min-width:2.1rem; height:2.4rem; padding-top:.42rem; align-items:flex-start; text-shadow:0 0 3px #000, 0 0 3px #000, 0 1px 2px #000;}
+
+/* ---------- 팝업 · 알림 패널 틀 (모서리 장식 9칸 늘이기) ---------- */
+.toast, .rank-panel, .offer-panel, .bet-box{
+  border:18px solid transparent; border-image:url(/images/ui/panel.webp) 64 fill / 18px / 0 stretch;
+  background:none; box-shadow:0 10px 26px rgba(0,0,0,.55);}
+.toast{border-width:12px; border-image-width:12px; padding:.15rem .55rem; border-radius:0;}
+.toast.gold{border-image-source:url(/images/ui/panel.webp); filter:drop-shadow(0 0 10px rgba(201,162,39,.55)); box-shadow:none;}
+.rank-panel, .offer-panel{border-radius:0;}
+.bet-box{border-radius:0; padding:.35rem .25rem;}
+
+/* ---------- 서브 화면 배경 (상점·덱·퀘스트 = 서재 / 대전·친구·설정 = 밤하늘 성탑) ---------- */
+#menu:has(.screen.show:not(#screen-main)){background:
+  linear-gradient(180deg, rgba(10,8,18,.55), rgba(10,8,18,.78)), url(/images/ui/bg_sub.webp) center/cover no-repeat fixed, var(--felt);}
+#menu#menu:has(#screen-pvp.show, #screen-friends.show, #screen-settings.show, #screen-difficulty.show, #screen-playmode.show, #screen-bet.show, #screen-mode.show, #screen-adventure.show){background:
+  linear-gradient(180deg, rgba(10,8,18,.5), rgba(10,8,18,.78)), url(/images/ui/bg_sub2.webp) center/cover no-repeat fixed, var(--felt);}
+
+/* ======================= v166 두 번째 묶음 ======================= */
+/* 카드 뒷면 (상대 손패 · 뽑는 카드) */
+.card-back{border:0; border-radius:3px; background:url(/images/card_back.webp) center/100% 100% no-repeat; box-shadow:0 2px 5px rgba(0,0,0,.6);}
+
+/* 마나 수정 */
+.mana-bar .crystal, .crystal{clip-path:none; border-radius:0; box-shadow:none; background:url(/images/ui/mana_full.webp) center/contain no-repeat; filter:drop-shadow(0 0 3px rgba(90,200,255,.75));}
+.mana-bar .crystal{width:16px; height:18px;}
+.mana-bar .crystal.empty, .crystal.empty{background:url(/images/ui/mana_empty.webp) center/contain no-repeat; filter:none; opacity:1;}
+.mana-bar.opp .crystal{width:11px; height:13px;}
+
+/* 턴 종료 버튼: 할 일 남음 = 금색 / 다 함 = 초록 / 상대 턴 = 어두운 청동 */
+.controls button.end-turn#endTurnBtn{border:0; border-radius:0; background:url(/images/ui/endturn_opp.webp) center/100% 100% no-repeat; color:#b9ad92; box-shadow:none; text-shadow:0 1px 2px #000; opacity:1;}
+.controls button.end-turn#endTurnBtn.has-moves{background-image:url(/images/ui/endturn_ready.webp); color:#ffe9a8; text-shadow:0 1px 3px #000, 0 0 8px rgba(255,190,70,.6);}
+.controls button.end-turn#endTurnBtn.no-moves{background-image:url(/images/ui/endturn_done.webp); color:#eaffe6; text-shadow:0 1px 3px #000, 0 0 8px rgba(110,230,120,.8);
+  box-shadow:none; filter:drop-shadow(0 0 6px rgba(80,210,100,.55)); animation:endTurnGlowImg 1.6s ease-in-out infinite;}
+@keyframes endTurnGlowImg{50%{filter:drop-shadow(0 0 14px rgba(80,210,100,.95));}}
+@media (prefers-reduced-motion:reduce){ .controls button.end-turn#endTurnBtn.no-moves{animation:none;} }
+.controls button.end-turn#endTurnBtn:disabled{cursor:not-allowed;}
+
+/* 카드 희귀도 보석 (그림이 이미 마름모라 돌리지 않는다) */
+:not(.zone) > .card.hs .rgem{transform:none; border:0; border-radius:0; box-shadow:none; width:13px; height:13px; margin-left:-6.5px; background:url(/images/ui/gem_common.webp) center/contain no-repeat;}
+:not(.zone) > .card.hs.rar-1 .rgem{background:url(/images/ui/gem_rare.webp) center/contain no-repeat;}
+:not(.zone) > .card.hs.rar-2 .rgem{background:url(/images/ui/gem_epic.webp) center/contain no-repeat;}
+:not(.zone) > .card.hs.rar-3 .rgem{background:url(/images/ui/gem_legend.webp) center/contain no-repeat; box-shadow:none; filter:drop-shadow(0 0 4px rgba(255,181,52,.9));}
+
+/* 상점 카드 팩 */
+.pk-pack{border:0; border-radius:0; background:url(/images/ui/card_pack.webp) center/100% 100% no-repeat; box-shadow:none; filter:drop-shadow(0 8px 18px rgba(0,0,0,.6)); justify-content:flex-end; padding-bottom:12%;}
+.pk-pack::before{inset:3% 4%; border-radius:6px;}
+.pk-pack i{display:none;}
+.pk-pack b, .pk-pack small{text-shadow:0 1px 3px #000, 0 0 6px #000;}
+
+/* 등급 그림 · 소리 버튼 */
+.rank-ico{width:1.55em; height:1.55em; vertical-align:-.45em;}
+#sndBtn:has(img){border:0; padding:0; background:none; width:2rem; height:2rem;}
+#sndBtn img{width:100%; height:100%; object-fit:contain; display:block;}
+.pk-pack-sm b, .pk-pack-sm small{display:none;}
+.pk-pack:not(.pk-pack-sm) b{position:absolute; left:0; right:0; bottom:22%; text-align:center;}
+.pk-pack:not(.pk-pack-sm) small{position:absolute; left:0; right:0; bottom:13%; text-align:center;}
+
+/* v168 안내 문구를 뺀 자리: 빈 줄이 남지 않게 */
+#pvpTodayCap[hidden], #pvpWaitingRow[hidden]{display:none !important;}
+.note:empty, .sub:empty, .mm-item .desc:empty, #pkInfo:empty, #pvpRankSub:empty, #shopDupNote:empty, .roll-sub:empty{display:none;}
+
+/* v172 오른쪽 위 계정·골드·전체화면을 나무판 그림으로 */
+#menuTop{gap:.5rem;}
+#userBar, #fsBtn, #menuWallet{border-radius:0; background:none; box-shadow:none;}
+#userBar{border:0; border-style:solid; border-width:10px 18px 12px 18px;
+  border-image:url(/images/ui/btn_plate.webp) 62 105 135 105 fill / 10px 18px 12px 18px stretch;
+  padding:.2rem .1rem .25rem .2rem; color:#f1dfb0; font-family:var(--font-d); font-size:1.05rem; letter-spacing:.02em;
+  text-shadow:0 -1px 0 rgba(0,0,0,.8), 0 1px 3px rgba(0,0,0,.6); filter:drop-shadow(0 3px 5px rgba(0,0,0,.45));}
+#userBar button{border:0; border-radius:0; border-style:solid; border-width:6px 10px 7px 10px;
+  border-image:url(/images/ui/btn_back.webp) 40 70 40 70 fill / 6px 10px 7px 10px stretch;
+  padding:0 .35rem; color:#2b2a2e; font-family:var(--font-u); font-weight:700; font-size:.8rem; text-shadow:0 1px 0 rgba(255,255,255,.4);}
+#userBar button:hover{filter:brightness(1.12);}
+#menuWallet{border:0; height:46px; width:176px; padding:0 .9rem 0 52px; display:inline-flex; align-items:center; justify-content:center;
+  background:url(/images/ui/rail_plate.webp) left center / 100% 100% no-repeat; position:relative;
+  color:#ffd977; font-family:var(--font-n); font-weight:400; font-size:1.35rem; text-shadow:0 2px 0 #000, 0 0 8px rgba(255,200,80,.35);
+  filter:drop-shadow(0 3px 5px rgba(0,0,0,.45));}
+#menuWallet .ico{position:absolute; left:12px; top:50%; transform:translateY(-50%); width:27px; height:27px; margin:0;}
+#fsBtn{border:0; border-radius:0; border-style:solid; border-width:10px 18px 12px 18px;
+  border-image:url(/images/ui/btn_plate.webp) 62 105 135 105 fill / 10px 18px 12px 18px stretch; padding:0 .1rem;
+  color:#f1dfb0; font-family:var(--font-d); font-size:.95rem;}
+@media (orientation:landscape) and (max-height:540px){
+  #userBar{font-size:.92rem;} #menuWallet{height:38px; width:146px; padding-left:43px; font-size:1.1rem;} #menuWallet .ico{left:10px; width:22px; height:22px;}
+}
+
+/* v172 모험 챕터·등급 탭, 유저 대전 일반전/랭크전 탭도 나무판 그림 (고른 탭은 밝게) */
+.adv-tabs button, .adv-ch, .pvp-modes button{border-radius:0; background:none; box-shadow:none; border-style:solid; border-width:9px 16px 11px 16px;
+  border-image:url(/images/ui/btn_plate.webp) 62 105 135 105 fill / 9px 16px 11px 16px stretch;
+  color:#f1dfb0; font-family:var(--font-d); text-shadow:0 -1px 0 rgba(0,0,0,.8), 0 1px 3px rgba(0,0,0,.6); filter:drop-shadow(0 3px 4px rgba(0,0,0,.4));}
+.adv-tabs button.on, .adv-ch.on, .pvp-modes button.on{color:#ffe08a !important; box-shadow:none;
+  filter:brightness(1.3) saturate(1.2) drop-shadow(0 0 6px rgba(255,200,80,.75)) drop-shadow(0 3px 4px rgba(0,0,0,.4));}
+.adv-tabs button:hover:not(.on), .adv-ch:hover:not(.on), .pvp-modes button:hover:not(.on){filter:brightness(1.12) drop-shadow(0 3px 4px rgba(0,0,0,.4));}
+
+#screen-main .mm-label{font-family:var(--font-d); font-weight:800; letter-spacing:.03em;}
+
+/* v172 메인 대전 카드 글씨: 나무 간판에 새긴 금빛 글씨 */
+#screen-main .mm-mode b{font-family:var(--font-d); font-weight:800; font-size:clamp(1rem, 8cqi, 2.4rem); color:#f3dca2; letter-spacing:.04em;
+  text-shadow:0 -1px 0 rgba(0,0,0,.9), 0 1px 0 rgba(255,225,160,.25), 0 2px 6px rgba(0,0,0,.7);}
+#screen-main .mm-mode .mm-txt{align-items:center; text-align:center;}
+
+/* v173 작은 버튼(.end-turn: 덱 보기 · 항복 · 닫기 · 저장 …)도 나무판 그림. 턴 종료 버튼은 따로(위 endturn 그림) */
+button.end-turn:not(#endTurnBtn){background:none; border-radius:0; box-shadow:none; border-style:solid; border-width:9px 16px 11px 16px;
+  border-image:url(/images/ui/btn_plate.webp) 62 105 135 105 fill / 9px 16px 11px 16px stretch;
+  padding:.15rem .35rem; color:#ffe08a; font-family:var(--font-d); font-weight:800; letter-spacing:.02em;
+  text-shadow:0 -1px 0 rgba(0,0,0,.85), 0 1px 3px rgba(0,0,0,.6); filter:drop-shadow(0 3px 4px rgba(0,0,0,.4));
+  transition:filter .15s ease, transform .12s ease;}
+button.end-turn.sub:not(#endTurnBtn){color:#f1dfb0; font-weight:700;}
+button.end-turn:not(#endTurnBtn):hover:not(:disabled){filter:brightness(1.15) drop-shadow(0 3px 4px rgba(0,0,0,.4));}
+button.end-turn:not(#endTurnBtn):active:not(:disabled){transform:translateY(1px); filter:brightness(.85);}
+button.end-turn.armed:not(#endTurnBtn), button.end-turn.sub.armed:not(#endTurnBtn){background:none; color:#fff;
+  filter:sepia(1) saturate(4) hue-rotate(-30deg) brightness(.9) drop-shadow(0 0 6px rgba(255,80,40,.7));}
+.controls button.end-turn.sub:not(#endTurnBtn){padding:.35rem .3rem; font-size:.95rem;}
+
+/* v173 창(덱 보기 · 덱 편집 · 내 덱 · 카드 제작 · 발견)도 모서리 장식 틀 */
+.deck-panel{border:18px solid transparent; border-radius:0; background:none;
+  border-image:url(/images/ui/panel.webp) 64 fill / 18px / 0 stretch; box-shadow:0 10px 30px rgba(0,0,0,.6);}
+.deck-panel .deck-head h3, #mulliganModal h3, #discoverTitle{font-family:var(--font-d); font-weight:800; color:#f3dca2; text-shadow:0 -1px 0 rgba(0,0,0,.9), 0 2px 6px rgba(0,0,0,.7);}
+button.end-turn:not(#endTurnBtn){white-space:nowrap;}
+@media (max-height:540px), (max-width:820px){
+  button.end-turn:not(#endTurnBtn){border-width:6px 10px 8px 10px; border-image-width:6px 10px 8px 10px; padding:.1rem .15rem;}
+  .controls button.end-turn.sub:not(#endTurnBtn){font-size:.74rem; padding:.2rem 0;}
+}
+/* 카드 제작 등급 탭도 같은 나무판 */
+#craftTabs button{border-radius:0; background:none; box-shadow:none; border-style:solid; border-width:7px 12px 9px 12px;
+  border-image:url(/images/ui/btn_plate.webp) 62 105 135 105 fill / 7px 12px 9px 12px stretch;
+  padding:.1rem .45rem; color:#f1dfb0; font-family:var(--font-d); text-shadow:0 -1px 0 rgba(0,0,0,.8);}
+#craftTabs button.on{color:#ffe08a; filter:brightness(1.3) saturate(1.2) drop-shadow(0 0 5px rgba(255,200,80,.7));}

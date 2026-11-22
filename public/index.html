@@ -1,0 +1,482 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>카드 결투</title>
+<meta name="theme-color" content="#14121f">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="카드 결투">
+<link rel="manifest" href="/manifest.webmanifest">
+<link rel="apple-touch-icon" href="/icons/icon-192.png">
+<link rel="stylesheet" href="/fonts/fonts.css">
+<link rel="stylesheet" href="/css/style.css">
+<link rel="stylesheet" href="/css/cardmaker.css">
+<link rel="stylesheet" href="/css/intro.css">
+<link rel="stylesheet" href="/css/cutscene.css">
+<link rel="stylesheet" href="/css/advstory.css">
+<link rel="stylesheet" href="/css/vnbox.css">
+<link rel="stylesheet" href="/css/orient.css">
+<link rel="stylesheet" href="/fonts/myeongjo/myeongjo.css">
+<link rel="stylesheet" href="/css/suneung.css">
+<link rel="stylesheet" href="/css/polish.css">
+<link rel="stylesheet" href="/css/uiskin.css">
+<link rel="stylesheet" href="/css/uiart.css">
+<link rel="stylesheet" href="/css/cardframe.css">
+<link rel="stylesheet" href="/css/flavor.css">
+<link rel="stylesheet" href="/css/playfx.css">
+<link rel="stylesheet" href="/css/art175.css">
+<script src="/js/flavor.js"></script>
+<script src="/js/orient.js"></script>
+<script src="/js/fullscreen.js"></script>
+</head>
+<body>
+<!-- v147 로그인 직후 인트로 (intro.js). 로그인하고 들어올 때만 보이고, 아니면 바로 지워진다 -->
+<div id="introSplash" aria-hidden="true">
+  <div class="is-embers"></div>
+  <div class="is-stage">
+    <img class="is-logo ghost" alt=""><img class="is-logo top" alt=""><img class="is-logo bot" alt="">
+    <img class="is-slash" alt="">
+    <div class="is-spark"></div>
+    <div class="is-sword"><img alt=""></div>
+  </div>
+  <div class="is-flash"></div>
+  <div class="is-skip">눌러서 건너뛰기</div>
+</div>
+<script src="/js/intro.js"></script>
+<svg id="arrowSvg"><defs><marker id="arrowhead" markerWidth="10" markerHeight="9" refX="7" refY="4.5" orient="auto"><polygon points="0 0,10 4.5,0 9" style="fill:var(--ember)"/></marker></defs>
+<line id="arrowLine" x1="0" y1="0" x2="0" y2="0" style="stroke:var(--ember); stroke-width:4; marker-end:url(#arrowhead);"/></svg>
+<div class="main">
+<h1>카드 결투<span class="badge" id="verBadge"></span><span class="badge" id="diffBadge"></span><span class="wallet walletView"></span></h1>
+<div class="board">
+  <div class="row" style="justify-content:space-between;">
+    <div class="hero" id="aiHero">
+      <div class="hero-power opp" id="aiPower" style="display:none"></div>
+      <div class="avatar portrait" id="aiAvatar"><span></span><img src="/images/pvp/avatar_frame.webp" alt=""><b class="p-hp" id="aiHp" title="체력"></b><i class="hero-atk" id="aiAtk" title="영웅 공격력"></i><i class="armor-shield" id="aiArmor" title="방어도"></i></div>
+      <div class="hinfo">
+        <div class="name">상대</div>
+        <div class="hp"><span class="armor-next" id="aiArmorNext"></span><span class="corpse-skull" id="aiCorpse" title="시체"></span></div>
+        <div class="pile">손패 <span id="aiHandCnt" style="margin-right:.6em"></span>덱 <span id="aiDeckCnt"></span></div>
+      </div>
+    </div>
+    <div class="label">상대 필드</div>
+    <div class="cheats" id="aiCheats"></div>
+  </div>
+  <div class="ai-hand" id="aiHand" title="상대 손패"></div>
+  <div class="zone" id="aiZone"></div>
+  <div class="zone" id="playerZone"></div>
+  <div class="row" style="justify-content:space-between;">
+    <div class="hero" id="playerHero">
+      <button type="button" class="hero-power" id="myPower" style="display:none" onclick="usePower(event)"></button>
+      <div class="avatar portrait" id="playerAvatar"><span></span><img src="/images/pvp/avatar_frame.webp" alt=""><b class="p-hp" id="playerHp" title="체력"></b><i class="hero-atk" id="playerAtk" title="영웅 공격력"></i><i class="armor-shield" id="playerArmor" title="방어도"></i></div>
+      <div class="hinfo">
+        <div class="name">나</div>
+        <div class="hp"><span class="armor-next" id="playerArmorNext"></span><span class="corpse-skull" id="playerCorpse" title="시체"></span></div>
+        <div class="pile">덱 <span id="myDeckCnt"></span></div>
+      </div>
+    </div>
+    <div class="label">내 필드</div>
+    <div style="min-width:140px;"></div>
+  </div>
+</div>
+<div id="pvpRope" class="pvp-rope" style="display:none"><img class="rope-head" src="/images/pvp/rope.webp" alt=""><div class="rope-body" id="pvpRopeBody"></div></div>
+<div class="controls"><div id="pvpTimer" class="pvp-timer" style="display:none"></div><button class="end-turn sub" id="specLeaveBtn" style="display:none">관전 나가기</button><button class="end-turn sub" id="deckBtn" onclick="openDeck()">덱 보기</button><button class="end-turn sub dev-skip" id="devSkipBtn" style="display:none" title="개발자 전용: 이 보스전을 바로 승리로 끝내요">⏭ 보스 건너뛰기</button><button class="end-turn sub" id="surrenderBtn">항복</button><button class="end-turn" id="endTurnBtn">턴 종료</button></div>
+<!-- v155 마나: 하스스톤처럼 오른쪽 위(상대) · 오른쪽 아래(나)에 수정으로 -->
+<div class="mana-bar opp" title="상대 마나"><div class="crystals" id="aiCrystals"></div><div class="mana"><span id="aiManaText"></span></div></div>
+<div class="mana-bar me" title="내 마나"><div class="mana"><span id="manaText"></span></div><div class="crystals" id="crystals"></div></div>
+<div class="deck-pile" id="myDeckPile" onclick="openDeck()"><img src="/images/deck_pile.webp" alt="내 덱" draggable="false"><span class="deck-cnt" id="myDeckPileCnt"></span></div>
+<div class="hand" id="hand"></div>
+</div>
+<aside id="logPanel"><h3>전투 기록<label class="log-opt" title="큰 피해를 받으면 화면이 흔들려요"><input type="checkbox" id="optShake" checked> 화면 흔들림</label><label class="log-opt" title="전설 하수인 · 주문을 낼 때와 보스전 시작 · 격파 연출"><input type="checkbox" id="optPlayFx" checked> 카드 연출</label></h3><div id="logList"></div></aside>
+<div id="overlay"><div id="overlayArt"></div><h2 id="overlayText"></h2><p id="overlayReward"></p><button class="end-turn" id="pvpAgainBtn" style="display:none">한 판 더</button><button class="end-turn sub" id="pvpReplayBtn" style="display:none">리플레이</button><button class="end-turn" onclick="goToMenu()">처음 화면으로</button></div>
+
+<div id="mulliganModal"><h3 id="mulliganTitle"></h3><div id="mulliganGrid"></div><button class="end-turn" id="mulliganOk"></button></div>
+<div id="discoverModal"><div class="deck-panel"><div class="deck-head"><h3 id="discoverTitle">발견</h3></div><p class="note" id="discoverNote"></p><div class="deck-grid" id="discoverGrid"></div></div></div>
+<div id="deckModal" onclick="if(event.target===this) closeDeck()">
+  <div class="deck-panel">
+    <div class="deck-head"><h3 id="deckTitle"></h3><button class="end-turn sub" onclick="closeDeck()">닫기</button></div>
+    
+    <div class="deck-grid" id="deckGrid"></div>
+  </div>
+</div>
+
+<div id="deckEditor" class="filters-collapsed">
+  <div class="deck-panel">
+    <div class="deck-head"><h3 id="edTitle"></h3>
+      <div class="ed-btns"><button class="end-turn sub" id="edFilterToggle" type="button">필터 ▾</button><button class="end-turn sub" id="edClear" style="display:none">비우기</button><button class="end-turn sub" id="edReset">추천 덱</button><button class="end-turn" id="edSave">저장</button><button class="end-turn sub" id="edClose">닫기</button></div>
+    </div>
+    <p class="note" id="edNote"></p>
+    <div id="edFilters">
+      <div class="ed-curve" id="edCurve"></div>
+      <div class="ed-tabs" id="edTabs"></div>
+      <div class="ed-tabs ed-costs" id="edCosts"></div>
+    </div>
+    <div class="deck-grid" id="edGrid"></div>
+  </div>
+</div>
+
+<div id="deckListModal">
+  <div class="deck-panel">
+    <div class="deck-head"><h3 id="deckListTitle">내 덱</h3>
+      <div class="ed-btns"><button class="end-turn sub" id="dlNew" type="button" onclick="newDeck()">＋ 새 덱</button><button class="end-turn sub" id="dlImport" type="button" onclick="importDeckCode()">코드로 가져오기</button><button class="end-turn" type="button" onclick="closeDeckList()">닫기</button></div>
+    </div>
+    <p class="note" id="deckListNote"></p>
+    <div class="dslots" id="deckSlots"></div>
+  </div>
+</div>
+
+<div id="craftModal">
+  <div class="deck-panel">
+    <div class="deck-head"><h3>카드 제작</h3>
+      <div class="ed-btns"><span class="dust-pill" id="craftDust"></span><button class="end-turn sub" id="craftExtra" type="button">일괄 추출</button><button class="end-turn" type="button" onclick="closeCraft()">닫기</button></div>
+    </div>
+    <p class="note" id="craftNote"></p>
+    <div class="ed-tabs" id="craftTabs"></div>
+    <div class="craft-search"><input id="craftSearch" placeholder="카드 이름 검색"></div>
+    <div class="deck-grid" id="craftGrid"></div>
+  </div>
+</div>
+
+<div id="packModal" aria-live="polite">
+  <div class="pk-top"><b id="pkTitle"></b></div>
+  <div class="pk-stage" id="pkStage"></div>
+  <div class="pk-info" id="pkInfo"></div>
+  <div class="pk-btns"><button class="end-turn sub" id="pkFlipAll">모두 뒤집기</button><button class="end-turn" id="pkNext" style="display:none"></button></div>
+</div>
+
+<div id="menu">
+  <div id="menuTop"><button type="button" id="fsBtn"><img class="ico ico-btn" src="/images/ui/btn_fullscreen.webp" alt="" draggable="false"> 전체화면</button><div id="userBar" hidden></div><span class="wallet walletView" id="menuWallet"></span></div>
+  <!-- v154 메인 화면: 왼쪽 메뉴 줄 + 가운데 모드 카드 3장 (예전 「게임 시작 → 모드 선택」 한 단계를 줄임). 버튼의 onclick · id 는 메뉴 둘러보기·배지 코드가 쓰므로 그대로 -->
+  <div class="screen show" id="screen-main">
+    <nav class="mm-rail" aria-label="메뉴">
+      <img class="mm-logo" src="/images/intro/logo.webp" alt="카드 결투">
+      <button type="button" class="mm-item" onclick="openShop()"><img class="mm-ic" src="/images/ui/ic_shop.webp" alt="" draggable="false"><span class="mm-label">상점</span><span class="desc" id="shopMenuDesc"></span></button>
+      <button type="button" class="mm-item" onclick="openDeckList()"><img class="mm-ic" src="/images/ui/ic_deck.webp" alt="" draggable="false"><span class="mm-label">내 덱</span></button>
+      <button type="button" class="mm-item" onclick="openCraft()"><img class="mm-ic" src="/images/ui/ic_craft.webp" alt="" draggable="false"><span class="mm-label">카드 제작</span><span class="desc" id="craftMenuDesc"></span></button>
+      <button type="button" class="mm-item" onclick="showScreen('power')"><img class="mm-ic" src="/images/ui/ic_power.webp" alt="" draggable="false"><span class="mm-label">영웅 능력</span></button>
+      <button type="button" class="mm-item" onclick="openQuests()"><img class="mm-ic" src="/images/ui/ic_quest.webp" alt="" draggable="false"><span class="mm-label">퀘스트</span><b class="fr-badge" id="questBadge" hidden></b><span class="desc" id="questMenuDesc"></span></button>
+      <button type="button" class="mm-item" onclick="openCodex()"><img class="mm-ic" src="/images/ui/ic_codex.webp" alt="" draggable="false"><span class="mm-label">특성 도감</span><span class="desc" id="codexMenuDesc"></span></button>
+      <button type="button" class="mm-item" onclick="Friends.open()"><img class="mm-ic" src="/images/ui/ic_friends.webp" alt="" draggable="false"><span class="mm-label">친구</span><b class="fr-badge" id="friendBadge" hidden></b><span class="desc" id="friendMenuDesc"></span></button>
+      <button type="button" class="mm-item" onclick="SuneungFx.mockExam()"><img class="mm-ic" src="/images/ui/ic_exam.webp" alt="" draggable="false"><span class="mm-label">모의고사</span></button>   <!-- v167 -->
+      <span class="mm-gap"></span>
+      <button type="button" class="mm-item mm-sub" onclick="openTutorials()"><img class="mm-ic" src="/images/ui/ic_tutorial.webp" alt="" draggable="false"><span class="mm-label">튜토리얼</span><b class="fr-badge" id="tutBadge" hidden></b><span class="desc" id="tutMenuDesc"></span></button>
+      <button type="button" class="mm-item mm-sub" onclick="openSettings()"><img class="mm-ic" src="/images/ui/ic_settings.webp" alt="" draggable="false"><span class="mm-label">설정</span></button>
+    </nav>
+    <div class="mm-body">
+      <header class="mm-head">
+        <h2>어떤 전투를 할까요?</h2>
+        <div class="mm-loadout">
+          <button type="button" class="mm-chip" onclick="openDeckList()" aria-label="내 덱 열기"><span class="desc" id="deckMenuDesc"></span></button>
+          <button type="button" class="mm-chip" onclick="showScreen('power')" aria-label="영웅 능력 고르기"><span class="desc" id="powerMenuDesc"></span></button>
+        </div>
+      </header>
+      <div class="mm-modes">
+        <button type="button" class="mm-mode ai" onclick="showScreen('difficulty')"><span class="mm-art"><span class="mm-txt"><b>AI 대전</b></span></span></button>
+        <button type="button" class="mm-mode pvp" onclick="PvpClient.openScreen()"><span class="mm-art"><span class="mm-txt"><b>유저 대전</b></span></span></button>
+        <button type="button" class="mm-mode adv" onclick="openAdventure()"><span class="mm-art"><span class="mm-txt"><b>모험 모드</b></span></span></button>
+      </div>
+      <div class="mm-dev">
+        <button class="menu-btn dev" id="btnTest" style="display:none" onclick="openTestScreen()">테스트<span class="desc">개발자 전용 · 중급2 AI와 연습 · 내 영웅 체력·시작 마나·덱 장수를 직접 설정 (보상·골드 없음)</span></button>
+        <button class="menu-btn dev" id="btnGoldTool" style="display:none" onclick="openGoldTool()">내 골드 설정<span class="desc">개발자 전용 · 시연용으로 골드를 채워요</span></button>
+        <button class="menu-btn dev" id="btnCardReview" style="display:none" onclick="window.open('/review.html','_blank')">카드 승인 (PR)<span class="desc">개발자 전용 · 유저가 만든 카드를 보고 승인·반려</span></button>
+        <button class="menu-btn dev" id="btnBossEdit" style="display:none" onclick="openBossEdit()">보스 덱 편집<span class="desc">개발자 전용 · 보스 목록·덱·AI 모델 설정</span></button>
+      </div>
+    </div>
+  </div>
+  <div class="screen" id="screen-shop">
+    <h3>상점</h3>
+    <div class="pk-pack pk-pack-sm" aria-hidden="true"><i></i><b>카드 팩</b><small id="shopPackSize"></small></div>
+    <p class="sub" id="shopSub"></p>
+    <div class="bet-box shop-box">
+      <div class="row2"><span>보유 골드</span><b id="shopGold"></b></div>
+      <div class="shop-rates" id="shopRates"></div>
+      <div class="row2"><span>특급 이상 보장</span><b id="shopPityEpic"></b></div>
+      <div class="row2"><span>전설 보장</span><b id="shopPityLegend"></b></div>
+      <p class="notice" id="shopDupNote"></p>
+    </div>
+    <button class="menu-btn primary" id="shopBuy1" onclick="shopBuy(1)"></button>
+    <button class="menu-btn" id="shopBuy5" onclick="shopBuy(5)"></button>
+    <p class="notice warn" id="shopMsg"></p>
+    <button class="menu-btn cm-open" id="shopMakeBtn" onclick="openCardMaker()">카드 직접 만들기<span class="desc">100골드</span></button>
+    <button class="menu-btn" id="shopHistBtn" onclick="toggleShopHistory()">최근 개봉 기록</button>
+    <div class="bet-box shop-box" id="shopHistory" style="display:none"></div>
+    <button class="menu-btn back" onclick="showScreen('main')">뒤로</button>
+  </div>
+  <div class="screen" id="screen-guide">
+    <h3>가이드</h3>
+    <div class="g-tabs"><button class="on" data-t="fx">효과 설명</button><button data-t="card">카드 읽는 법</button><button data-t="rule">게임 규칙</button><button data-t="mode">모드</button></div>
+    <div class="g-body" id="guideBody"></div>
+    <button class="menu-btn back" onclick="showScreen('tutorial'); renderTutorials()">← 튜토리얼로</button>
+  </div>
+  <div class="screen" id="screen-test">
+    <h3>테스트</h3>
+    
+    <div class="bet-box">
+      <div class="row2"><span>내 영웅 체력</span><b id="tHpLabel"></b></div>
+      <input type="number" id="tHp" inputmode="numeric" step="1" min="1" max="999">
+      <div class="row2"><span>시작 마나 (첫 턴)</span><b id="tManaLabel"></b></div>
+      <input type="number" id="tMana" inputmode="numeric" step="1" min="1" max="10">
+      <div class="row2"><span>테스트 덱</span><b id="tDeckCnt"></b></div>
+    </div>
+    <button class="menu-btn" onclick="openTestDeckEditor()">테스트 덱 편집<span class="desc" id="tDeckDesc"></span></button>
+    <button class="menu-btn primary" onclick="startTest()">테스트 시작</button>
+    <button class="menu-btn back" onclick="showScreen('main')">뒤로</button>
+  </div>
+  <div class="screen" id="screen-adventure">
+    <h3>모험 모드</h3>
+    
+    <div class="adv-chapters" id="advChapters"></div>
+    <div class="adv-chdesc" id="advChapterDesc" style="display:none"></div>
+    <div class="adv-tabs" id="advTabs"></div>
+    <div class="boss-list" id="bossList"></div>
+    <button class="menu-btn primary" id="advOfferBtn" style="display:none" onclick="showOffer(ServerStore.offers[0])"></button>
+    <button class="menu-btn" id="advDeckBtn" onclick="openAdvDeckEditor()">모험 덱 편집<span class="desc" id="advDeckDesc"></span></button>
+    <p class="sub" id="advFreeNote" style="display:none"></p>
+    <button class="menu-btn back" onclick="showScreen('main')">뒤로</button>
+  </div>
+  <div class="screen" id="screen-bossedit">
+    <h3>보스 덱 편집</h3>
+    <p class="dev-warn">개발자 전용. 여기서 저장한 보스 목록은 서버에 저장되어 모든 유저에게 바로 적용돼요.</p>
+    <div class="boss-list" id="bossEditList"></div>
+    <button class="menu-btn" onclick="bossAdd()">＋ 보스 추가</button>
+    <button class="menu-btn" onclick="bossAddTemplate('ynu')">영남대 틀 추가·맞추기<span class="desc">수능 → 1학년 → 2학년 → 3학년 → 4학년 → 졸업, 6단계 (예전 학년별 2단계 틀은 정리 · 직접 고친 덱은 그대로)</span></button>
+    <p class="dev-warn" id="bossFileStat"></p>
+    <button class="menu-btn" onclick="$('regFile').click()">번호표(card_registry.json) 불러오기<span class="desc" id="regDesc"></span></button>
+    <input type="file" id="regFile" accept=".json" style="display:none" onchange="bossLoadRegistry(this.files[0]); this.value=''">
+    <button class="menu-btn" onclick="bossExport()">JSON 보기·복사</button>
+    <button class="menu-btn" onclick="bossImport()">JSON 붙여넣어 가져오기</button>
+    <div class="bf-box" id="bossJsonBox" style="display:none"><textarea id="bossJson" spellcheck="false"></textarea><span class="hint" id="bossJsonMsg"></span></div>
+    <button class="menu-btn" onclick="bossResetAll()">↺ 코드 기본값으로 되돌리기 (서버 목록 삭제)</button>
+    <button class="menu-btn back" onclick="showScreen('main')">뒤로</button>
+  </div>
+  <div class="screen" id="screen-bossform">
+    <h3 id="bfTitle">보스 설정</h3>
+    <div class="bf-box">
+      <label>이름</label><input id="bfName" maxlength="20">
+      <label>아이콘 <span class="hint">— 이모지 1~2자, 또는 그림 경로 (예: images/boss/ynu_suneung.jpg)</span></label><input id="bfIcon" maxlength="110">
+      <label>소개</label><input id="bfDesc" maxlength="80">
+      <label>챕터 (도장깨기) <span class="hint">— 없음이면 '자유 보스전' 목록에 나와요</span></label><select id="bfChapter"></select>
+      <div id="bfStageRow"><label>단계 <span class="hint">(1부터. 낮은 단계를 모두 깨야 열려요)</span></label><input id="bfStage" type="number" min="1" max="99" step="1"></div>
+      <label>첫 클리어 보상 카드 <span class="hint">— 카드 이름을 쉼표로 구분. 2장 주려면 두 번 적기 (예: 새내기 OT 조장, 새내기 OT 조장)</span></label><input id="bfRewardCards">
+      <div class="bf-stat" id="bfRewardStat"></div>
+      <label>첫 클리어 보상 카드 묶음 후보 <span class="hint">— 카드 이름을 쉼표로 구분. 첫 클리어 때 3묶음으로 나눠(종류마다 2장) 하나를 고르게 해요</span></label><textarea id="bfRewardChoice" spellcheck="false" style="min-height:3.5rem;font-family:inherit"></textarea>
+      <div class="bf-stat" id="bfChoiceStat"></div>
+      <label>보스 특성 (치트) <span class="hint">— 고른 개수만큼 난이도 등급이 올라요 (0개 중급/상급 · 1 브론즈 · 2 실버 · 3 골드 · 4 플래티넘 · 5 에메랄드 · 6 다이아몬드 · 7 마스터 · 8 그랜드마스터 · 9개 이상 챌린저)</span></label>
+      <div class="bf-stat" id="bfRank"></div>
+      <div class="cheat-grid" id="bfCheats"></div>
+      <label>첫 클리어 보상 골드 <span class="hint">(0 = 등급 기본값. 재도전은 10%)</span></label><input id="bfReward" type="number" min="0" step="10">
+      <label>등급</label>
+      <select id="bfTier"><option value="mid">중급 보스 (규칙 AI)</option><option value="high">상급 보스 (학습 모델 AI)</option></select>
+      <label>영웅 능력 <span class="hint">(무작위면 판마다 바뀜 · 아래쪽 「보스 능력」은 치트를 영웅 능력 자리에 넣어요)</span></label><select id="bfPower"></select>
+      <div id="bfPowerOpts" class="bf-power-opts" style="display:none">
+        <label>방식</label><select id="bfPowerMode"><option value="passive">지속 — 항상 켜져 있음 (누를 수 없음)</option><option value="active">사용 — 버튼을 눌러 씀 (턴마다 한 번)</option></select>
+        <div id="bfPowerCostRow"><label>사용 비용 (마나)</label><input id="bfPowerCost" type="number" min="0" max="10" step="1"></div>
+        <div id="bfPowerValRow"><label>수치</label><span class="cv" id="bfPowerVal"></span></div>
+        <div class="bf-stat" id="bfPowerDesc"></div>
+      </div>
+      <label>고유 능력 <span class="hint">(영웅 능력 자리와 별개로 항상 켜져 있는 보스 전용 능력)</span></label><select id="bfUnique"></select>
+      <div id="bfMidBox"><label>규칙 AI 종류</label>
+        <select id="bfBot"><option value="rule">중급 (규칙)</option><option value="rule2">중급2 (규칙, 더 강함)</option></select></div>
+      <div id="bfHighBox"><label>학습 모델 파일 <span class="hint">(학습이 저장한 model.json / best.json. .pt 는 안 돼요)</span></label>
+        <div class="bf-model"><input id="bfModel" placeholder="예: ppo_general.json"><button type="button" onclick="$('bfModelFile').click()">파일 선택</button></div>
+        <input type="file" id="bfModelFile" style="display:none">
+        <div class="bf-stat" id="bfModelStat"></div>
+        <span class="hint">배포할 때는 이 파일을 HTML 옆에 두고, 위 이름을 그 경로(예: models/ppo_general.json)로 맞추세요. 파일이 없으면 중급2가 대신 싸워요.</span></div>
+    </div>
+    <button class="menu-btn" onclick="bossFormDeck()">보스 덱 편집<span class="desc" id="bfDeckDesc"></span></button>
+    <button class="menu-btn primary" onclick="bossFormSave()">저장</button>
+    <button class="menu-btn" onclick="bossFormTest()">▶ 저장하고 시험 대전<span class="desc">클리어 기록에 남지 않아요</span></button>
+    <button class="menu-btn back" onclick="bossFormBack()">목록으로</button>
+  </div>
+  <div class="screen" id="screen-tutorial">
+    <h3>튜토리얼</h3>
+    
+    <div class="tut-list" id="tutList"></div>
+    <button class="menu-btn back" onclick="showScreen('main')">뒤로</button>
+    <div class="tut-guide">
+      <p class="tut-guide-h">가이드</p>
+      <button class="menu-btn" onclick="openGuide()">가이드 열기</button>
+    </div>
+  </div>
+  <div class="screen" id="screen-quests">
+    <div class="first-steps" id="firstSteps" hidden>
+      <h3>첫 걸음</h3>
+      <div class="quest-list" id="firstList"></div>
+      <p class="note warn" id="firstNote"></p>
+    </div>
+    <button type="button" class="codex-link" onclick="openCodex()"><img src="/images/cheats/recycle2.webp" alt=""><span><b>특성 도감</b><small id="codexLinkDesc">보스·AI 특성을 처음 이길 때마다 100골드</small></span><i aria-hidden="true">›</i></button>
+    <h3>일일 퀘스트</h3>
+    <p class="sub" id="questSub"></p>
+    <div class="quest-list" id="questList"></div>
+    <p class="note" id="questNote"></p>
+    <button class="menu-btn back" onclick="showScreen('main')">뒤로</button>
+  </div>
+  <div class="screen" id="screen-codex">
+    <h3>특성 도감</h3>
+    <p class="sub" id="codexSum"></p>
+    <div class="codex-bar"><i id="codexBar"></i></div>
+    <div class="codex-grid" id="codexGrid"></div>
+    <button class="menu-btn back" onclick="openQuests()">퀘스트로</button>
+  </div>
+  <div class="screen" id="screen-settings">
+    <h3>설정</h3>
+    <div class="set-list">
+      <label class="set-row" id="setFsRow">
+        <span class="set-txt"><b>전체 화면으로 시작</b></span>
+        <input type="checkbox" id="setAutoFs" class="set-switch" role="switch">
+      </label>
+      <button type="button" class="menu-btn" id="setFsNow">전체 화면 켜기</button>
+      <p class="sub" id="setFsNone" hidden>이 브라우저는 전체 화면을 지원하지 않아요</p>
+    </div>
+    <button class="menu-btn back" onclick="showScreen('main')">뒤로</button>
+  </div>
+  <div class="screen" id="screen-power">
+    <h3>영웅 능력</h3>
+    
+    <div class="power-grid" id="powerGrid"></div>
+    <button class="menu-btn back" onclick="showScreen('main')">뒤로</button>
+  </div>
+  <div class="screen" id="screen-mode">
+    <h3>모드 선택</h3>
+    <button class="menu-btn" onclick="showScreen('difficulty')">AI 대전</button>
+    <button class="menu-btn" onclick="PvpClient.openScreen()"><img class="mi" src="/images/pvp/pvp_button.webp" alt="">유저 대전</button>
+    <button class="menu-btn" onclick="openAdventure()">모험 모드</button>
+    <button class="menu-btn back" onclick="showScreen('main')">뒤로</button>
+  </div>
+  <div class="screen" id="screen-pvp">
+    <img class="pvp-banner" src="/images/pvp/pvp_banner.webp" alt="">
+    <h3>유저 대전</h3>
+    <div class="pvp-modes" id="pvpModes"><button type="button" data-mode="normal" class="on">일반전</button><button type="button" data-mode="rank">랭크전</button></div>
+    <div class="pvp-rank" id="pvpRankBox" style="display:none">
+      <div class="rk-badge" id="pvpRankBadge">-</div>
+      <div class="rk-sub" id="pvpRankSub"></div>
+      <div class="rk-bar"><i id="pvpRankBar"></i></div>
+      <button type="button" class="rk-board" id="pvpRankBoardBtn">순위표</button>
+    </div>
+    <div class="pvp-record" title="내 전적">
+      <div class="rec"><img src="/images/pvp/badge_win.webp" alt="승"><b id="pvpWins">0</b></div>
+      <div class="rec"><img src="/images/pvp/badge_lose.webp" alt="패"><b id="pvpLosses">0</b></div>
+      <div class="rec"><img src="/images/pvp/badge_draw.webp" alt="무"><b id="pvpDraws">0</b></div>
+    </div>
+    <div class="pvp-gauge" id="pvpGauge" title="오늘 승리">
+      <img src="/images/pvp/gauge.webp" alt=""><div class="gbar"><i id="pvpGaugeFill"></i></div><i class="ggem off"></i><i class="ggem off"></i><i class="ggem off"></i><i class="ggem off"></i><i class="ggem off"></i><i class="ggem off"></i><i class="ggem off"></i><i class="ggem off"></i><i class="ggem off"></i><i class="ggem off"></i>
+    </div>
+    <p class="sub gcap" id="pvpTodayCap" hidden>오늘 <b id="pvpToday">0</b>승</p>
+    <div class="bet-box">
+      <div class="row2" id="pvpWaitingRow" hidden><span>대기 중</span><b id="pvpWaiting">-</b></div>
+    </div>
+    <p class="notice warn" id="pvpMsg" style="display:none"></p>
+    <button class="menu-btn" id="pvpFallbackBtn" style="display:none">일반전으로 바꾸기</button>
+    <button class="menu-btn primary" id="pvpFindBtn" disabled><img id="pvpSpin" class="pvp-spin" src="/images/pvp/pvp_spinner.webp" alt="" style="display:none"><span id="pvpFindTxt">주점 문 두드리는 중…</span></button>
+    <button class="menu-btn" id="pvpReplaysBtn">지난 판 다시 보기</button>
+    <button class="menu-btn back" id="pvpBackBtn">뒤로</button>
+  </div>
+  <div class="screen" id="screen-friends">
+    <h3>친구</h3>
+    <div class="fr-box">
+      <div class="fr-me"><span>내 아이디 <b id="frMyId">-</b></span><span>보이는 이름 <b id="frMyName">-</b></span></div>
+      <form class="fr-row" id="frNickForm" autocomplete="off" hidden>
+        <input id="frNick" maxlength="12" placeholder="닉네임 2~12자">
+        <button type="submit" class="end-turn" id="frNickSave">닉네임 정하기</button>
+      </form>
+      <p class="fr-note" id="frNickNote">한 번 정하면 바꿀 수 없어요</p>
+    </div>
+    <div class="fr-box">
+      <form class="fr-row" id="frAddForm" autocomplete="off">
+        <input id="frAdd" maxlength="16" placeholder="친구의 아이디 또는 닉네임">
+        <button type="submit" class="end-turn">친구 요청 보내기</button>
+      </form>
+    </div>
+    <p class="notice warn" id="frMsg" style="display:none"></p>
+    <div class="fr-section" id="frIncomingSec" hidden><h4>받은 친구 요청</h4><div class="fr-list" id="frIncoming"></div></div>
+    <div class="fr-section"><h4>친구 <small id="frCount"></small></h4><div class="fr-list" id="frList"><p class="fr-empty">단골 명부 넘기는 중…</p></div></div>
+    <div class="fr-section" id="frOutgoingSec" hidden><h4>보낸 요청</h4><div class="fr-list" id="frOutgoing"></div></div>
+    <p class="notice">친구 대전은 기록에 남지 않아요</p>
+    <button class="menu-btn back" onclick="Friends.close()">뒤로</button>
+  </div>
+  <div class="screen" id="screen-difficulty">
+    <h3>난이도 선택</h3>
+    <div id="difficultyList" style="display:flex; flex-direction:column; gap:.9rem; width:100%;"></div>
+    <button class="menu-btn back" onclick="showScreen('main')">뒤로</button>
+  </div>
+  <div class="screen" id="screen-playmode">
+    <h3 id="playmodeTitle">중급</h3>
+    <button class="menu-btn" id="btnNormalMode" onclick="startGame(curKey,{mode:'normal'})"></button>
+    <button class="menu-btn" id="btnBetMode" onclick="openBetScreen()"></button>
+    <button class="menu-btn back" onclick="showScreen('difficulty')">뒤로</button>
+  </div>
+  <div class="screen" id="screen-bet">
+    <h3>배팅 설정</h3>
+    <div class="bet-box">
+      <div class="row2"><span>보유 골드</span><b id="betGold"></b></div>
+      <div class="row2"><span>최대 배팅</span><b id="betMax"></b></div>
+      <div class="row2"><span>배당 선택</span><b id="betTierLabel"></b></div>
+      <div class="tier-toggle" id="tierToggle"></div>
+      <div class="cheat-info" id="cheatInfo"></div>
+      <input type="number" id="betInput" inputmode="numeric" step="1">
+      <input type="range" id="betRange" step="1">
+      <div class="bet-quick">
+        <button onclick="setBet('min')">최소</button><button onclick="setBet(0.25)">25%</button><button onclick="setBet(0.5)">50%</button><button onclick="setBet('max')">전액</button>
+      </div>
+      <div class="bet-result" id="betResult"></div>
+    </div>
+    <p class="notice warn">중간에 나가면 환불 없음</p>
+    <button class="menu-btn primary" id="betGo" onclick="confirmBet()">배팅하고 시작</button>
+    <button class="menu-btn back" onclick="showScreen('playmode')">뒤로</button>
+  </div>
+</div>
+<div id="rotateHint" role="alertdialog" aria-label="가로 화면 안내"><div class="rh-icon img"><img src="/images/ui/btn_rotate.webp" alt="" draggable="false"></div><p>가로로 돌려 주세요</p><button type="button" id="rotateFsBtn">전체화면</button><small></small></div>
+<button type="button" id="logToggle" aria-label="전투 기록"><img src="/images/ui/btn_log.webp" alt="" draggable="false"></button>
+
+
+<div class="offer-modal" id="offerModal">
+  <div class="offer-panel">
+    <h3 id="offerTitle">클리어 보상</h3>
+    <p class="sub" id="offerMsg"></p>
+    <div class="offer-bundles" id="offerBundles"></div>
+    <div class="offer-after" id="offerAfter" style="display:none">
+      <button class="menu-btn primary" id="offerGoDeck" onclick="closeOffer(); openAdvDeckEditor()">모험 덱 편집하러 가기</button>
+      <button class="menu-btn" onclick="closeOffer()">닫기</button>
+    </div>
+    <button class="menu-btn back" id="offerLater" onclick="closeOffer()">닫기</button>
+  </div>
+</div>
+<script src="/js/auth.js"></script>
+<script src="/js/cards.js"></script>
+<script src="/js/engine.js"></script>
+<script src="/js/customboot.js"></script>
+<script src="/js/policy_v3.js"></script>
+<script src="/js/cheats.js"></script>
+<script src="/js/economy.js"></script>
+<script src="/js/collection.js"></script>
+<script src="/js/adventure.js"></script>
+<script src="/js/advstory.js"></script>
+<script src="/js/shop.js"></script>
+<script src="/js/pvp.js"></script>
+<script src="/js/progress.js"></script>
+<script src="/js/deckcode.js"></script>
+<script src="/js/rank.js"></script>
+<script src="/js/serverstore.js"></script>
+<script src="/js/cardtext.js"></script>
+<script src="/js/preload.js"></script>
+<script src="/js/cardart.js"></script>
+<script src="/js/quizbank.js"></script>
+<script src="/js/cutscene.js"></script>
+<script src="/js/juice.js"></script>
+<script src="/js/playfx.js"></script>
+<script src="/js/ui.js"></script>
+<script src="/js/effectcatalog.js"></script>
+<script src="/js/cardrules.js"></script>
+<script src="/js/cardmaker.js"></script>
+<script src="/js/menutour.js"></script>
+<script src="/js/pvpclient.js"></script>
+<script src="/js/friends.js"></script>
+<script src="/js/replay.js"></script>
+<script src="/js/suneung.js"></script>
+<script src="/js/polish.js"></script>
+<script src="/js/mobile.js"></script>
+<script src="/js/sound.js"></script>
+</body>
+</html>
