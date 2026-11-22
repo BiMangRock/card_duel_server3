@@ -21,7 +21,7 @@ const server = http.createServer(app).listen(0, async () => {
   try {
     assert.ok([200, 201].includes((await Dev('POST', '/api/signup', { username: 'devguy', nickname: 'devguy', password: 'password1' })).status));
     assert.ok([200, 201].includes((await User('POST', '/api/signup', { username: 'normal1', nickname: 'normal1', password: 'password1' })).status));
-    db.prepare("UPDATE users SET is_admin=1 WHERE username='devguy'").run();
+    await db.prepare("UPDATE users SET is_admin=1 WHERE username='devguy'").run();
     const special = ['연구실의 군주 지도교수', '수강신청 서버 대폭발', 'F폭격기 교수님', '지옥의 중간고사', '데스윙'];   // 모험 전용 · 보스 전용 · 안 가진 전설
     const deck = [...special.flatMap(n => [n, n]), ...E.defaultDeckList().filter(n => !special.includes(n))].slice(0, 30);
     assert.strictEqual(E.validateDeckList(deck), null);
@@ -31,8 +31,8 @@ const server = http.createServer(app).listen(0, async () => {
     }
     const sv = (await Dev('GET', '/api/save')).data; assert.strictEqual(sv.isAdmin, true); assert.deepStrictEqual(sv.deck, deck, '불러와도 그대로'); assert.deepStrictEqual(sv.advDeck, deck);
     const bad = deck.slice(0, 29); assert.strictEqual((await Dev('PUT', '/api/deck', { deck: bad })).status, 400, '30장 규칙은 그대로');
-    const devId = db.prepare("SELECT id FROM users WHERE username='devguy'").get().id;
-    assert.deepStrictEqual(pvpDb.loadDeck(devId), E.defaultDeckList(), '유저 대전은 특수 카드 덱 대신 추천 덱');
+    const devId = (await db.prepare("SELECT id FROM users WHERE username='devguy'").get()).id;
+    assert.deepStrictEqual(await pvpDb.loadDeck(devId), E.defaultDeckList(), '유저 대전은 특수 카드 덱 대신 추천 덱');
     console.log('test-dev: 모두 통과');
   } catch (e) { console.error(e); process.exitCode = 1; } finally { server.close(); }
 });

@@ -5,13 +5,13 @@ const { Economy } = require(path.join(__dirname, '..', 'public', 'js', 'economy.
 
 const walletRow = uid => db.prepare('SELECT gold,pool,pool_day,bet,rev FROM wallets WHERE user_id=?').get(uid);
 const walletOut = r => ({ gold: r.gold, pool: r.pool, poolDay: r.pool_day, bet: r.bet, rev: r.rev });
-function ensureWallet(uid) {                                // 첫 접속이면 시작 골드로 새로 만든다
-  let r = walletRow(uid);
+async function ensureWallet(uid) {                          // 첫 접속이면 시작 골드로 새로 만든다
+  let r = await walletRow(uid);
   if (!r) {
     const w = Economy.sanitize(null, new Date());
-    db.prepare('INSERT OR IGNORE INTO wallets(user_id,gold,pool,pool_day,bet,rev,updated_at) VALUES (?,?,?,?,?,1,?)')
+    await db.prepare('INSERT INTO wallets(user_id,gold,pool,pool_day,bet,rev,updated_at) VALUES (?,?,?,?,?,1,?) ON CONFLICT DO NOTHING')
       .run(uid, w.gold, w.pool, w.poolDay, w.bet, Date.now());
-    r = walletRow(uid);
+    r = await walletRow(uid);
   }
   return r;
 }

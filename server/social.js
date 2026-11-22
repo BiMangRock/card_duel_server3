@@ -10,7 +10,7 @@
 //   GET  /api/chat/:id?before=메시지id     친구와의 대화 (최근 50개씩, 오래된 것이 앞)
 //   POST /api/chat/send {to, text}         메시지 보내기 → 받는 사람(과 내 다른 탭)에게 스트림으로 {t:'chat', msg, from}
 //   POST /api/chat/read {id, upTo?}        친구가 보낸 메시지 읽음 처리 → 보낸 사람에게 {t:'chatRead', by, upTo}
-//  접속 상태·실시간 알림은 유저 대전 스트림(pvp-core)을 쓴다 → createSocialRouter({ core })
+//  접속 상태·실시간 알림은 유저 대전(pvp-core)의 world · 실시간 통로를 쓴다 → createSocialRouter({ core })
 const express = require('express');
 const { requireAuth } = require('./auth');
 const F = require('./friends-db');
@@ -33,94 +33,96 @@ function createSocialRouter({ core, onRename } = {}) {
   const chatReadOk = makeBucket(120, 60 * 1000);
   const tooMany = res => res.status(429).json({ error: '요청이 너무 많아요. 잠시 뒤 다시 해 주세요.' });
   const idOf = b => Number.isInteger(b && b.id) ? b.id : Number.isInteger(Number(b && b.id)) ? Number(b.id) : NaN;
-  const ping = (uid, why, name) => { if (core) core.notify(uid, { t: 'friends', why, name }); };
-  const presence = uid => core ? core.presenceOf(uid) : { online: false, state: 'offline' };
+  const ping = async (uid, why, name) => { if (core) await core.notify(uid, { t: 'friends', why, name }); };
+  const presence = async uid => core ? core.presenceOf(uid) : { online: false, state: 'offline' };
+  const presenceMany = async uids => core ? core.presenceMany(uids) : Object.fromEntries(uids.map(id => [id, { online: false, state: 'offline' }]));
   const ORDER = { match: 0, queue: 1, spectate: 1, idle: 1, offline: 2 };
 
   router.use(['/friends', '/profile', '/chat'], requireAuth);
 
-  router.get('/friends', (req, res) => {
+  router.get('/friends', async (req, res) => {
     res.set('Cache-Control', 'no-store');
-    const uid = req.user.id, L = F.listOf(uid), me = F.userRow(uid);
-    const friends = L.friends.map(f => ({ ...f, ...presence(f.id) }))
+    const uid = req.user.id, L = await F.listOf(uid), me = await F.userRow(uid);
+    const pres = await presenceMany(L.friends.map(f => f.id));
+    const friends = L.friends.map(f => ({ ...f, ...(pres[f.id] || { online: false, state: 'offline' }) }))
       .sort((a, b) => (ORDER[a.state] ?? 3) - (ORDER[b.state] ?? 3) || a.name.localeCompare(b.name, 'ko'));
     res.json({ me: F.publicUser(me), friends, incoming: L.incoming, outgoing: L.outgoing, max: F.FRIENDS.MAX_FRIENDS });
   });
 
-  router.put('/profile/nickname', (req, res) => {
+  router.put('/profile/nickname', async (req, res) => {
     if (!nickOk(req.user.id)) return tooMany(res);
     const nick = (req.body || {}).nickname;
     if (typeof nick !== 'string' || !nick.trim()) return res.status(400).json({ error: '닉네임을 입력해 주세요.' });
-    const r = F.setNickname(req.user.id, nick.trim());
+    const r = await F.setNickname(req.user.id, nick.trim());
     if (!r.ok) return res.status(r.locked || r.error.includes('이미') || r.error.includes('같은') ? 409 : 400).json(r);
-    const me = F.publicUser(F.userRow(req.user.id));
-    if (core) core.rename(req.user.id, me.name);
+    const me = F.publicUser(await F.userRow(req.user.id));
+    if (core) await core.rename(req.user.id, me.name);
     if (onRename) onRename(req.user.id);
-    for (const fid of F.friendIds(req.user.id)) ping(fid, 'rename', me.name);
+    for (const fid of await F.friendIds(req.user.id)) await ping(fid, 'rename', me.name);
     res.json({ ok: true, me });
   });
 
-  router.post('/friends/request', (req, res) => {
+  router.post('/friends/request', async (req, res) => {
     if (!reqOk(req.user.id)) return tooMany(res);
-    const r = F.sendRequest(req.user.id, (req.body || {}).to);
+    const r = await F.sendRequest(req.user.id, (req.body || {}).to);
     if (!r.ok) return res.status(r.error.includes('없어요') ? 404 : 400).json(r);
-    ping(r.user.id, r.status === 'accepted' ? 'accepted' : 'request', req.user.name || req.user.username);
+    await ping(r.user.id, r.status === 'accepted' ? 'accepted' : 'request', req.user.name || req.user.username);
     res.json(r);
   });
-  const answer = accept => (req, res) => {
+  const answer = accept => async (req, res) => {
     if (!actOk(req.user.id)) return tooMany(res);
     const id = idOf(req.body); if (!Number.isInteger(id)) return res.status(400).json({ error: '잘못된 요청이에요.' });
-    const r = F.answerRequest(req.user.id, id, accept);
+    const r = await F.answerRequest(req.user.id, id, accept);
     if (!r.ok) return res.status(400).json(r);
-    ping(id, accept ? 'accepted' : 'declined', req.user.name || req.user.username);
+    await ping(id, accept ? 'accepted' : 'declined', req.user.name || req.user.username);
     res.json(r);
   };
   router.post('/friends/accept', answer(true));
   router.post('/friends/decline', answer(false));
-  router.post('/friends/cancel', (req, res) => {
+  router.post('/friends/cancel', async (req, res) => {
     if (!actOk(req.user.id)) return tooMany(res);
     const id = idOf(req.body); if (!Number.isInteger(id)) return res.status(400).json({ error: '잘못된 요청이에요.' });
-    const r = F.cancelRequest(req.user.id, id);
-    if (r.ok) ping(id, 'cancelled', req.user.name || req.user.username);
+    const r = await F.cancelRequest(req.user.id, id);
+    if (r.ok) await ping(id, 'cancelled', req.user.name || req.user.username);
     res.status(r.ok ? 200 : 400).json(r);
   });
-  router.post('/friends/remove', (req, res) => {
+  router.post('/friends/remove', async (req, res) => {
     if (!actOk(req.user.id)) return tooMany(res);
     const id = idOf(req.body); if (!Number.isInteger(id)) return res.status(400).json({ error: '잘못된 요청이에요.' });
-    const r = F.removeFriend(req.user.id, id);
-    if (r.ok) ping(id, 'removed', req.user.name || req.user.username);
+    const r = await F.removeFriend(req.user.id, id);
+    if (r.ok) await ping(id, 'removed', req.user.name || req.user.username);
     res.status(r.ok ? 200 : 400).json(r);
   });
   // ---------- v141 친구 채팅 ----------
-  router.get('/chat/:id', (req, res) => {
+  router.get('/chat/:id', async (req, res) => {
     res.set('Cache-Control', 'no-store');
     const fid = Number(req.params.id), before = req.query.before === undefined ? undefined : Number(req.query.before);
     if (!Number.isInteger(fid)) return res.status(400).json({ error: '잘못된 요청이에요.' });
-    const r = F.chatHistory(req.user.id, fid, before);
+    const r = await F.chatHistory(req.user.id, fid, before);
     if (!r.ok) return res.status(403).json(r);
-    const f = F.userRow(fid);
-    res.json({ ...r, friend: F.publicUser(f), me: req.user.id, ...presence(fid) });
+    const f = await F.userRow(fid);
+    res.json({ ...r, friend: F.publicUser(f), me: req.user.id, ...(await presence(fid)) });
   });
-  router.post('/chat/send', (req, res) => {
+  router.post('/chat/send', async (req, res) => {
     if (!chatOk(req.user.id)) return res.status(429).json({ error: '메시지를 너무 빨리 보내고 있어요. 잠시 뒤 다시 해 주세요.' });
     const b = req.body || {}, to = Number(b.to);
-    const r = F.sendChat(req.user.id, to, b.text);
+    const r = await F.sendChat(req.user.id, to, b.text);
     if (!r.ok) return res.status(r.error.includes('친구') ? 403 : 400).json(r);
     const from = { id: req.user.id, name: req.user.name || req.user.username };
     if (core) {
-      core.notify(to, { t: 'chat', msg: r.msg, from });
-      core.notify(req.user.id, { t: 'chat', msg: r.msg, from, mine: true });   // 내 다른 탭·기기에도 보이게
+      await core.notify(to, { t: 'chat', msg: r.msg, from });
+      await core.notify(req.user.id, { t: 'chat', msg: r.msg, from, mine: true });   // 내 다른 탭·기기에도 보이게
     }
     res.json(r);
   });
-  router.post('/chat/read', (req, res) => {
+  router.post('/chat/read', async (req, res) => {
     if (!chatReadOk(req.user.id)) return tooMany(res);
     const b = req.body || {}, fid = idOf(b), upTo = Number.isInteger(Number(b.upTo)) ? Number(b.upTo) : undefined;
     if (!Number.isInteger(fid)) return res.status(400).json({ error: '잘못된 요청이에요.' });
-    const n = F.markRead(req.user.id, fid, upTo);
+    const n = await F.markRead(req.user.id, fid, upTo);
     if (n && core) {
-      core.notify(fid, { t: 'chatRead', by: req.user.id, upTo: upTo || null });
-      core.notify(req.user.id, { t: 'chatRead', self: true, friend: fid });       // 내 다른 탭의 안 읽음 표시도 지운다
+      await core.notify(fid, { t: 'chatRead', by: req.user.id, upTo: upTo || null });
+      await core.notify(req.user.id, { t: 'chatRead', self: true, friend: fid });       // 내 다른 탭의 안 읽음 표시도 지운다
     }
     res.json({ ok: true, read: n });
   });

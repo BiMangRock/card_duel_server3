@@ -50,8 +50,8 @@ const server = http.createServer(app).listen(0, async () => {
     assert.strictEqual(r.status, 409);
 
     // 퀘스트: 특성 있는 상대 2승 (cheat2) — 오늘 퀘스트에 넣어 두고 확인
-    const uid = db.prepare("SELECT id FROM users WHERE username='codex1'").get().id;
-    db.prepare('UPDATE player_progress SET quests_json=? WHERE user_id=?').run(JSON.stringify([{ id: 'cheat2', prog: 0, done: false }]), uid);
+    const uid = (await db.prepare("SELECT id FROM users WHERE username='codex1'").get()).id;
+    await db.prepare('UPDATE player_progress SET quests_json=? WHERE user_id=?').run(JSON.stringify([{ id: 'cheat2', prog: 0, done: false }]), uid);
     r = await call('POST', '/api/quests/report', { stats: win, rev, beaten: ['mirror'] }); rev = r.data.wallet.rev;
     assert.strictEqual(r.data.quests.list[0].prog, 1);
     r = await call('POST', '/api/quests/report', { stats: win, rev, beaten: [] }); rev = r.data.wallet.rev;

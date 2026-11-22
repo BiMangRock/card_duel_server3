@@ -68,11 +68,11 @@ const server = http.createServer(app).listen(0, async () => {
     assert.ok(deck.every(n => col[n] >= 1), '추천 덱 카드는 등급과 상관없이 보유');
     assert.strictEqual(col[LEGEND], undefined, '전설은 스타터에 없음');
     r = await A('PUT', '/api/deck', { deck: legendDeck }); assert.strictEqual(r.status, 400, '미보유 카드가 든 덱은 거부'); assert.ok(/보유/.test(r.data.error));
-    const aliceId = dbRaw.prepare("SELECT id FROM users WHERE username='alice01'").get().id;
-    colDb.ensureAtLeast(aliceId, LEGEND, 2);                       // grant.js 가 하는 일
+    const aliceId = (await dbRaw.prepare("SELECT id FROM users WHERE username='alice01'").get()).id;
+    await colDb.ensureAtLeast(aliceId, LEGEND, 2);                       // grant.js 가 하는 일
     r = await A('PUT', '/api/deck', { deck: legendDeck }); assert.strictEqual(r.status, 200, '지급받은 뒤에는 저장 가능');
     r = await A('GET', '/api/save'); assert.deepStrictEqual(r.data.deck, legendDeck);
-    dbRaw.prepare('UPDATE collection SET count=1 WHERE user_id=? AND card_name=?').run(aliceId, LEGEND);   // 보유가 줄어든 상황
+    await dbRaw.prepare('UPDATE collection SET count=1 WHERE user_id=? AND card_name=?').run(aliceId, LEGEND);   // 보유가 줄어든 상황
     r = await A('GET', '/api/save'); assert.strictEqual(r.data.deck, null, '저장된 덱이 보유와 안 맞으면 null (클라이언트는 추천 덱 사용)');
     r = await A('PUT', '/api/deck', { deck }); assert.strictEqual(r.status, 200);
     const again = await A('GET', '/api/save'); assert.strictEqual(again.data.collection[LEGEND], 1, '스타터는 한 번만 지급 (다시 받지 않음)');

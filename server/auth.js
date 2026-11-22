@@ -46,10 +46,10 @@ hashPassword('dummy-password-for-timing').then(h => { DUMMY_HASH = h; });
 
 // ---------- 세션 ----------
 const sha256 = s => crypto.createHash('sha256').update(s).digest('hex');
-function createSession(userId) {
+async function createSession(userId) {
   const token = crypto.randomBytes(32).toString('base64url');
   const now = Date.now();
-  db.prepare('INSERT INTO sessions(token_hash,user_id,created_at,expires_at) VALUES (?,?,?,?)')
+  await db.prepare('INSERT INTO sessions(token_hash,user_id,created_at,expires_at) VALUES (?,?,?,?)')
     .run(sha256(token), userId, now, now + SESSION_MS);
   return token;
 }
@@ -61,20 +61,21 @@ function parseCookies(req) {
   }
   return out;
 }
-function getSessionUser(req) {
+async function getSessionUser(req) {
+  if (req._sessUser !== undefined) return req._sessUser;      // 한 요청 안에서 여러 번 불러도 DB 는 한 번
   const token = parseCookies(req)[COOKIE_NAME];
-  if (!token) return null;
-  const row = db.prepare(`SELECT u.id, u.username, u.nickname, u.is_admin, s.expires_at FROM sessions s JOIN users u ON u.id=s.user_id
+  if (!token) return (req._sessUser = null);
+  const row = await db.prepare(`SELECT u.id, u.username, u.nickname, u.is_admin, s.expires_at FROM sessions s JOIN users u ON u.id=s.user_id
                           WHERE s.token_hash=?`).get(sha256(token));
-  if (!row || row.expires_at < Date.now()) return null;
-  return { id: row.id, username: row.username, nickname: row.nickname || null, name: row.nickname || row.username, isAdmin: !!row.is_admin };   // v136 name = 화면에 보일 이름 (닉네임, 없으면 아이디)
+  if (!row || row.expires_at < Date.now()) return (req._sessUser = null);
+  return req._sessUser = { id: row.id, username: row.username, nickname: row.nickname || null, name: row.nickname || row.username, isAdmin: !!row.is_admin };   // v136 name = 화면에 보일 이름 (닉네임, 없으면 아이디)
 }
 function setCookie(req, res, token) {
-  const secure = process.env.COOKIE_SECURE === '1' || req.secure;      // https(터널/프록시) 뒤에서는 Secure
+  const secure = process.env.COOKIE_SECURE === '1' || req.secure || !!process.env.VERCEL;   // Vercel 은 항상 https      // https(터널/프록시) 뒤에서는 Secure
   res.cookie(COOKIE_NAME, token, { httpOnly: true, sameSite: 'lax', secure, maxAge: SESSION_MS, path: '/' });
 }
 function purgeExpiredSessions() {
-  db.prepare('DELETE FROM sessions WHERE expires_at < ?').run(Date.now());
+  return db.prepare('DELETE FROM sessions WHERE expires_at < ?').run(Date.now());
 }
 
 // ---------- 시도 횟수 제한 ----------
@@ -93,7 +94,8 @@ function makeLimiter(max, windowMs) {
 const loginFailIp   = makeLimiter(30, 10 * 60 * 1000);   // IP당 10분에 30번 실패까지
 const loginFailUser = makeLimiter(8,  10 * 60 * 1000);   // 아이디당 10분에 8번 실패까지
 const signupByIp    = makeLimiter(10, 60 * 60 * 1000);   // IP당 1시간에 가입 10번까지
-setInterval(() => { loginFailIp.sweep(); loginFailUser.sweep(); signupByIp.sweep(); purgeExpiredSessions(); }, 10 * 60 * 1000).unref();
+setInterval(() => { loginFailIp.sweep(); loginFailUser.sweep(); signupByIp.sweep(); }, 10 * 60 * 1000).unref();   // 만료된 세션은 로그인할 때 지운다 (서버리스에서는 계속 도는 타이머가 없다)
+let lastPurge = 0;
 
 // ---------- 라우터 ----------
 const router = express.Router();
@@ -114,25 +116,25 @@ router.post('/signup', async (req, res, next) => {
     const bad = validateCredentials(username, password);
     if (bad) return res.status(400).json({ error: bad });
     if (!nickname) return res.status(400).json({ error: '닉네임을 정해 주세요. (한 번 정하면 바꿀 수 없어요)' });
-    const badNick = checkNickname(-1, nickname);                // 남의 닉네임·아이디와 겹치면 안 됨 (내 아이디와 같은 건 괜찮다)
+    const badNick = await checkNickname(-1, nickname);                // 남의 닉네임·아이디와 겹치면 안 됨 (내 아이디와 같은 건 괜찮다)
     if (badNick) return res.status(badNick.includes('이미') || badNick.includes('같은') ? 409 : 400).json({ error: badNick });
     if (signupByIp.blocked(req.ip)) return res.status(429).json({ error: '가입 시도가 너무 많아요. 잠시 후 다시 해 주세요.' });
     signupByIp.add(req.ip);
-    if (db.prepare('SELECT 1 FROM users WHERE username=? COLLATE NOCASE').get(username) || nicknameTaken(username))
+    if (await db.prepare('SELECT 1 FROM users WHERE lower(username)=lower(?)').get(username) || await nicknameTaken(username))
       return res.status(409).json({ error: '이미 사용 중인 아이디예요.' });
-    if (nickname.toLowerCase() !== username.toLowerCase() && db.prepare('SELECT 1 FROM users WHERE username=? COLLATE NOCASE').get(nickname))
+    if (nickname.toLowerCase() !== username.toLowerCase() && await db.prepare('SELECT 1 FROM users WHERE lower(username)=lower(?)').get(nickname))
       return res.status(409).json({ error: '다른 사람의 아이디와 같은 닉네임은 쓸 수 없어요.' });
     const pw_hash = await hashPassword(password);
     let id;
     try {
-      id = db.prepare('INSERT INTO users(username,pw_hash,created_at,last_login,nickname) VALUES (?,?,?,?,?)')
-        .run(username, pw_hash, Date.now(), Date.now(), nickname).lastInsertRowid;
+      id = (await db.prepare('INSERT INTO users(username,pw_hash,created_at,last_login,nickname) VALUES (?,?,?,?,?) RETURNING id')
+        .get(username, pw_hash, Date.now(), Date.now(), nickname)).id;
     } catch (e) {                                          // 동시에 같은 아이디·닉네임으로 가입한 경우
-      if (/UNIQUE constraint|constraint failed/i.test(String(e.message)))
-        return res.status(409).json({ error: /nickname/i.test(String(e.message)) ? '이미 다른 사람이 쓰는 닉네임이에요.' : '이미 사용 중인 아이디예요.' });
+      if (db.isUnique(e))
+        return res.status(409).json({ error: /nickname/i.test(String(e.constraint || e.message)) ? '이미 다른 사람이 쓰는 닉네임이에요.' : '이미 사용 중인 아이디예요.' });
       throw e;
     }
-    setCookie(req, res, createSession(Number(id)));
+    setCookie(req, res, await createSession(Number(id)));
     res.status(201).json({ user: { id: Number(id), username, nickname, name: nickname } });
   } catch (e) { next(e); }
 });
@@ -145,41 +147,42 @@ router.post('/login', async (req, res, next) => {
     const uKey = username.toLowerCase();
     if (loginFailIp.blocked(req.ip) || loginFailUser.blocked(uKey))
       return res.status(429).json({ error: '로그인 실패가 너무 많아요. 10분 뒤에 다시 시도해 주세요.' });
-    const row = db.prepare('SELECT id, username, pw_hash FROM users WHERE username=?').get(username);
+    const row = await db.prepare('SELECT id, username, pw_hash FROM users WHERE lower(username)=lower(?)').get(username);
     const ok = await verifyPassword(password, row ? row.pw_hash : (DUMMY_HASH || 'x$x$x$x$x$x'));
     if (!row || !ok) {
       loginFailIp.add(req.ip); loginFailUser.add(uKey);
       return res.status(401).json({ error: '아이디 또는 비밀번호가 올바르지 않아요.' });
     }
     loginFailUser.clear(uKey);
-    db.prepare('UPDATE users SET last_login=? WHERE id=?').run(Date.now(), row.id);
-    setCookie(req, res, createSession(row.id));
+    await db.prepare('UPDATE users SET last_login=? WHERE id=?').run(Date.now(), row.id);
+    setCookie(req, res, await createSession(row.id));
+    if (Date.now() - lastPurge > 10 * 60 * 1000) { lastPurge = Date.now(); purgeExpiredSessions().catch(() => {}); }
     res.json({ user: { id: row.id, username: row.username } });
   } catch (e) { next(e); }
 });
 
-router.post('/logout', (req, res) => {
+router.post('/logout', async (req, res) => {
   const token = parseCookies(req)[COOKIE_NAME];
-  if (token) db.prepare('DELETE FROM sessions WHERE token_hash=?').run(sha256(token));
+  if (token) await db.prepare('DELETE FROM sessions WHERE token_hash=?').run(sha256(token));
   res.clearCookie(COOKIE_NAME, { path: '/' });
   res.json({ ok: true });
 });
 
-router.get('/me', (req, res) => {
-  const user = getSessionUser(req);
+router.get('/me', async (req, res) => {
+  const user = await getSessionUser(req);
   if (!user) return res.status(401).json({ error: '로그인이 필요해요.' });
   res.json({ user });
 });
 
 // 다른 라우트에서 로그인 필수로 쓰는 미들웨어 (3단계부터 사용)
-function requireAuth(req, res, next) {
-  const user = getSessionUser(req);
+async function requireAuth(req, res, next) {
+  const user = await getSessionUser(req);
   if (!user) return res.status(401).json({ error: '로그인이 필요해요.' });
   req.user = user; next();
 }
 // 개발자 전용 라우트용 (v116): 로그인 + is_admin=1
-function requireAdmin(req, res, next) {
-  requireAuth(req, res, () => {
+async function requireAdmin(req, res, next) {
+  await requireAuth(req, res, () => {
     if (!req.user.isAdmin) return res.status(403).json({ error: '개발자만 쓸 수 있어요.' });
     next();
   });

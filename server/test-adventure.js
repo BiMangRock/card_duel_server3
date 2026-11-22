@@ -59,8 +59,8 @@ const server = http.createServer(app).listen(0, async () => {
   try {
     await dev('POST', '/api/signup', { username: 'devadv1', nickname: 'devadv1', password: 'password123' });
     await user('POST', '/api/signup', { username: 'useradv1', nickname: 'useradv1', password: 'password123' });
-    dbRaw.prepare("UPDATE users SET is_admin=1 WHERE username='devadv1'").run();
-    const uid = dbRaw.prepare("SELECT id FROM users WHERE username='useradv1'").get().id;
+    await dbRaw.prepare("UPDATE users SET is_admin=1 WHERE username='devadv1'").run();
+    const uid = (await dbRaw.prepare("SELECT id FROM users WHERE username='useradv1'").get()).id;
     const deck = E.defaultDeckList();
     const boss = (id, extra) => ({ id, name: '보스 ' + id, icon: '🎓', desc: '', cheats: [], tier: 'mid', bot: 'rule2', model: '', deck, ...extra });
 
@@ -106,9 +106,9 @@ const server = http.createServer(app).listen(0, async () => {
     r = await user('GET', '/api/save'); assert.deepStrictEqual(r.data.advDeck, deckWith(ADV), '모험 덱 불러오기');
 
     // DB 를 직접 조작해 일반 덱에 모험 카드를 넣어도: 불러오기는 null, 유저 대전은 추천 덱
-    dbRaw.prepare('INSERT INTO decks(user_id,deck_json,updated_at) VALUES (?,?,?) ON CONFLICT(user_id) DO UPDATE SET deck_json=excluded.deck_json').run(uid, JSON.stringify(deckWith(ADV)), Date.now());
+    await dbRaw.prepare('INSERT INTO decks(user_id,deck_json,updated_at) VALUES (?,?,?) ON CONFLICT(user_id) DO UPDATE SET deck_json=excluded.deck_json').run(uid, JSON.stringify(deckWith(ADV)), Date.now());
     r = await user('GET', '/api/save'); assert.strictEqual(r.data.deck, null, '조작된 일반 덱은 무시');
-    assert.deepStrictEqual(loadDeck(uid), E.defaultDeckList(), '유저 대전에 모험 카드 덱 X');
+    assert.deepStrictEqual(await loadDeck(uid), E.defaultDeckList(), '유저 대전에 모험 카드 덱 X');
     console.log('✔ 모험 덱 API · 클리어 순서 · 보상 카드 · 유저 대전 차단');
     // v117 보상 묶음: 첫 클리어 때 3묶음 → 하나 고르기
     r = await dev('PUT', '/api/bosses', { bosses: [

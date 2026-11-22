@@ -120,7 +120,7 @@ const server = http.createServer(app).listen(0, async () => {
     // 골드 부족: 100골드로 2팩
     r = await A('POST', '/api/shop/open', { count: 2, rev: rev0 }); assert.strictEqual(r.status, 400); assert.ok(/부족/.test(r.data.error));
     s = await A('GET', '/api/save'); assert.strictEqual(s.data.wallet.gold, 100, '실패하면 골드 그대로'); assert.strictEqual(s.data.wallet.rev, rev0); assert.strictEqual(sumCol(s.data.collection), sumCol(col0), '실패하면 카드 그대로');
-    assert.strictEqual(dbRaw.prepare('SELECT COUNT(*) n FROM pack_log').get().n, 0, '실패하면 기록도 없음');
+    assert.strictEqual((await dbRaw.prepare('SELECT COUNT(*) n FROM pack_log').get()).n, 0, '실패하면 기록도 없음');
 
     // 1팩 개봉 (골드 100 → 0 + 환급)
     r = await A('POST', '/api/shop/open', { count: 1, rev: rev0 }); assert.strictEqual(r.status, 200, JSON.stringify(r.data));
@@ -146,7 +146,7 @@ const server = http.createServer(app).listen(0, async () => {
     assert.strictEqual(newCards + dupCards.length, 50); assert.strictEqual(sumCol(o.collection) - sumCol(colBefore), newCards);
     assert.strictEqual(dupCards.reduce((t, c) => t + c.refund, 0), refundSum);
     assert.strictEqual(o.refund, 0, 'v134: 중복 골드 환급 없음'); assert.strictEqual(sumCol(o.collection) - sumCol(colBefore), 50, 'v134: 50장 모두 컬렉션에');
-    assert.strictEqual(dbRaw.prepare('SELECT COUNT(*) n FROM pack_log').get().n, 11, '팩 1개당 기록 1줄 (1 + 10)');
+    assert.strictEqual((await dbRaw.prepare('SELECT COUNT(*) n FROM pack_log').get()).n, 11, '팩 1개당 기록 1줄 (1 + 10)');
     assert.strictEqual(o.opened, 11);
 
     // 천장 카운터가 저장·유지된다 + 상점 정보에 기록이 보인다
@@ -154,11 +154,11 @@ const server = http.createServer(app).listen(0, async () => {
     assert.deepStrictEqual(r.data.history[0].cards.length, 5); assert.ok(r.data.history[0].id > r.data.history[1].id, '최신 기록이 먼저');
     assert.deepStrictEqual(r.data.pity.sinceLegend, o.pity.sinceLegend);
     // 천장 확정: 카운터를 직접 올려 두면 다음 팩에 전설 확정 (+ 기록에 pityHit)
-    const aliceId = dbRaw.prepare("SELECT id FROM users WHERE username='alice01'").get().id;
-    dbRaw.prepare('UPDATE shop_state SET since_legend=?, since_epic=? WHERE user_id=?').run(SHOP.PITY_LEGEND - 1, 0, aliceId);
+    const aliceId = (await dbRaw.prepare("SELECT id FROM users WHERE username='alice01'").get()).id;
+    await dbRaw.prepare('UPDATE shop_state SET since_legend=?, since_epic=? WHERE user_id=?').run(SHOP.PITY_LEGEND - 1, 0, aliceId);
     r = await A('POST', '/api/shop/open', { count: 1, rev: o.wallet.rev }); assert.strictEqual(r.status, 200);
     assert.ok(r.data.packs[0].cards.some(c => c.rarity === '전설'), '전설 천장 팩'); assert.strictEqual(r.data.packs[0].pityHit, 'legend'); assert.strictEqual(r.data.pity.sinceLegend, 0);
-    assert.strictEqual(dbRaw.prepare('SELECT pity_hit FROM pack_log ORDER BY id DESC LIMIT 1').get().pity_hit, 'legend');
+    assert.strictEqual((await dbRaw.prepare('SELECT pity_hit FROM pack_log ORDER BY id DESC LIMIT 1').get()).pity_hit, 'legend');
 
     // 계정 분리: bob 의 상점/컬렉션/천장은 alice 와 무관
     r = await B('GET', '/api/shop'); assert.strictEqual(r.data.opened, 0); assert.deepStrictEqual(r.data.history, []);

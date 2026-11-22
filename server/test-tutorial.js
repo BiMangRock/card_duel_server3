@@ -81,9 +81,9 @@ const server = http.createServer(app).listen(0, async () => {
 
     // 다른 계정: 전설을 다 갖고 있으면 그중 하나 (한 장 더)
     cookie = ''; await call('POST', '/api/signup', { username: 'rich01', nickname: 'rich01', password: 'password1' }); await call('GET', '/api/save');
-    const uid = db.prepare("SELECT id FROM users WHERE username='rich01'").get().id;
+    const uid = (await db.prepare("SELECT id FROM users WHERE username='rich01'").get()).id;
     const ins = db.prepare('INSERT INTO collection(user_id,card_name,count) VALUES (?,?,2) ON CONFLICT(user_id,card_name) DO UPDATE SET count=2');
-    tutorial.LEGENDS.forEach(c => ins.run(uid, c.name));
+    for (const c of tutorial.LEGENDS) await ins.run(uid, c.name);
     await call('POST', '/api/tutorial/complete', { tutorial: 'advanced' });
     r = await call('POST', '/api/tutorial/claim', { tutorial: 'advanced' }); assert.strictEqual(r.status, 200);
     assert.strictEqual(r.data.reward.card.isNew, false); assert.strictEqual(r.data.collection[r.data.reward.card.name], 3);
