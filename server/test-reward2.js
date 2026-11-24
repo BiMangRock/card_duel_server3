@@ -70,11 +70,11 @@ const bear = { name: '시험 곰', atk: 5, hp: 5 };
   const eggs = s.seats[0].hand.filter(c => c.name === '서비스 계란말이'); assert.strictEqual(eggs.length, 2); assert.strictEqual(eggs[0].cost, 0);
   const m = s.seats[0].board[0]; s = play(s, 0, eggs[0], mt(0, m.id)); assert.deepStrictEqual([s.seats[0].board[0].hp, s.seats[0].board[0].maxHp], [7, 7]); }
 
-// 만물상: 전투의 함성 + 죽음의 메아리로 응원 주문 1장씩
+// 만물상: 등장 + 유언으로 응원 주문 1장씩
 { let s = setup(); s = play(s, 0, give(s, 0, '과방 붙박이 만물상'));
   const names = E.YNU2_GADGETS.map(g => g.name); assert.strictEqual(s.seats[0].hand.filter(c => names.includes(c.name)).length, 1);
   s.seats[0].board[0].hp = 1; s = play(s, 0, give(s, 0, '불꽃 화살'), mt(0, s.seats[0].board[0].id));
-  assert.strictEqual(s.seats[0].board.length, 0); assert.strictEqual(s.seats[0].hand.filter(c => names.includes(c.name)).length, 2, '죽음의 메아리'); }
+  assert.strictEqual(s.seats[0].board.length, 0); assert.strictEqual(s.seats[0].hand.filter(c => names.includes(c.name)).length, 2, '유언'); }
 
 // 전역 복학생: 속공, 처치하면 남은 공격력만큼 방어도 (영웅 공격은 낸 턴에 불가)
 { let s = setup(); const e = put(s, 1, { name: '적', atk: 2, hp: 3 }); s = play(s, 0, give(s, 0, '의욕 넘치는 전역 복학생'));
@@ -127,7 +127,7 @@ const bear = { name: '시험 곰', atk: 5, hp: 5 };
   s = ok(E.apply(s, { type: 'CHOOSE', index: 0 }, 0)); assert.strictEqual(s.seats[0].hand.length, 1); }
 { let s = setup(); s.seats[0].deck.push({ ...card('들쥐'), id: s.nextId++, inDeck: true }); s = play(s, 0, give(s, 0, gadget('편의점 1+1 쿠폰')));
   assert.strictEqual(s.seats[0].hand.filter(c => c.name === '들쥐').length, 2, '비용 1이면 1+1'); }
-{ let s = setup(); s.seats[0].deck.push({ ...card('데스윙'), id: s.nextId++, inDeck: true }); s = play(s, 0, give(s, 0, gadget('편의점 1+1 쿠폰')));
+{ let s = setup(); s.seats[0].deck.push({ ...card('파멸의 흑룡'), id: s.nextId++, inDeck: true }); s = play(s, 0, give(s, 0, gadget('편의점 1+1 쿠폰')));
   assert.strictEqual(s.seats[0].hand.length, 1, '비싸면 1장만'); }
 { let s = setup(); s.seats[0].hp = 20; s.seats[0].mana = 1; s = play(s, 0, give(s, 0, gadget('선배 찬스 (커피 기프티콘)'))); assert.deepStrictEqual([s.seats[0].mana, s.seats[0].hp], [1, 22]); }
 console.log('✔ 2학년 보상 카드 9장 + 응원 주문 9종');

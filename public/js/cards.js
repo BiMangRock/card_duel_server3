@@ -42,16 +42,16 @@ const CARD_POOL = [
   {type:'minion', name:"고대 용", cost:7, rarity:'희귀', atk:8, hp:8, effect:{type:'buff', value:2}},
   {type:'minion', name:"고대의 수호룡", cost:7, rarity:'특급', atk:6, hp:9, taunt:true, shield:true},
   {type:'minion', name:"날쌘 척후병", cost:2, rarity:'일반', atk:1, hp:3, rush:true},
-  {type:'minion', name:"대마법학자 롬메스", cost:9, rarity:'전설', atk:5, hp:7, effect:{type:'recastLog'}},   // v56: 시작 덱에 없던 주문 중 내가 손패에서 낸 것을 낸 횟수만큼 다시 시전
+  {type:'minion', name:"되새김의 대마법사", cost:9, rarity:'전설', atk:5, hp:7, effect:{type:'recastLog'}},   // v56: 시작 덱에 없던 주문 중 내가 손패에서 낸 것을 낸 횟수만큼 다시 시전
   {type:'minion', name:"주문 직조사", cost:4, rarity:'희귀', atk:3, hp:5, effect:{type:'seedDeck', value:10}},                      // v57: 무작위 주문 10장을 내 덱에 섞어 넣는다 (이름은 임의로 정함)
   {type:'minion', name:"회귀의 사서", cost:3, rarity:'일반', atk:2, hp:2, effect:{type:'recycle', value:3, draw:3}},               // v57: 손패를 덱에 섞고, 덱 전체 비용 -3, 카드 3장 뽑기 (이름은 임의로 정함. 능력치 2/2 는 '22>' 를 그렇게 읽음)
-  {type:'minion', name:"유물 수집가", cost:2, rarity:'일반', atk:3, hp:2, deathCopy:true},                                      // v58: 죽음의 메아리 — 내 손패에서 비용이 가장 높은 주문 1장을 복사 (이름은 임의로 정함)
-  {type:'minion', name:"성소의 수습사제", cost:2, rarity:'일반', atk:1, hp:4, effect:{type:'healHoly', value:3}},                 // v58: 전투의 함성 — 대상 체력 3 회복(v59: 약초꾼처럼 대상을 직접 선택), 무작위 신성 주문 1장을 손패로 (이름은 임의로 정함)
-  {type:'minion', name:"명암의 사도", cost:3, rarity:'일반', atk:3, hp:4, deathGain:true},                                       // v59: 죽음의 메아리 — 무작위 암흑 주문 1장과 무작위 신성 주문 1장을 손패로 (이름은 임의로 정함)
+  {type:'minion', name:"유물 수집가", cost:2, rarity:'일반', atk:3, hp:2, deathCopy:true},                                      // v58: 유언 — 내 손패에서 비용이 가장 높은 주문 1장을 복사 (이름은 임의로 정함)
+  {type:'minion', name:"성소의 수습사제", cost:2, rarity:'일반', atk:1, hp:4, effect:{type:'healHoly', value:3}},                 // v58: 등장 — 대상 체력 3 회복(v59: 약초꾼처럼 대상을 직접 선택), 무작위 신성 주문 1장을 손패로 (이름은 임의로 정함)
+  {type:'minion', name:"명암의 사도", cost:3, rarity:'일반', atk:3, hp:4, deathGain:true},                                       // v59: 유언 — 무작위 암흑 주문 1장과 무작위 신성 주문 1장을 손패로 (이름은 임의로 정함)
   {type:'minion', name:"분열하는 점액", cost:1, rarity:'일반', atk:2, hp:2, onAttackCopy:true},                                  // v59: 이 하수인이 공격할 때마다 복사본(모든 강화 유지)을 비용 1로 손패에 (이름은 임의로 정함)
-  {type:'minion', name:"요그사론", cost:10, rarity:'전설', atk:7, hp:7, effect:{type:'yogg'}},                 // v56: 내가 손패에서 낸 주문 수만큼 무작위 주문 시전 (비용·능력치는 임의로 정함)
+  {type:'minion', name:"광기의 고대신", cost:10, rarity:'전설', atk:7, hp:7, effect:{type:'yogg'}},                 // v56: 내가 손패에서 낸 주문 수만큼 무작위 주문 시전 (비용·능력치는 임의로 정함)
   {type:'spell', name:"대마법 보호막", cost:3, rarity:'일반', runes:{unholy:1}, school:['암흑'], effect:{type:'massElusive', value:1}},
-  {type:'spell', name:"탈란지의 최후의 저항", cost:5, rarity:'희귀', runes:{unholy:2}, effect:{type:'massDeathSummonCost', value:4}},
+  {type:'spell', name:"최후의 결사 항전", cost:5, rarity:'희귀', runes:{unholy:2}, effect:{type:'massDeathSummonCost', value:4}},
   {type:'spell', name:"냉혹한 겨울", cost:4, rarity:'일반', runes:{frost:1}, school:['냉기'], effect:{type:'enemySweepDraw', value:2}},
   // ---- 주문: 전장에 남지 않고 효과만 쓰고 사라진다. 수치는 잠정치 — selfPlay 로 재 가며 조정할 것 ----
   {type:'spell', name:"치유의 빛",   cost:1, rarity:'일반', school:['신성'], effect:{type:'heal', value:5}},
@@ -62,7 +62,7 @@ const CARD_POOL = [
   {type:'spell', name:"급습",       cost:2, rarity:'일반', effect:{type:'haste'}},
   {type:'spell', name:"처형",       cost:3, rarity:'일반', school:['암흑'], effect:{type:'execute', value:5}},
   {type:'spell', name:"불의 비",    cost:4, rarity:'일반', school:['화염'], effect:{type:'rain', value:2}},
-  {type:'spell', name:"첫 번째 불꽃", cost:1, rarity:'일반', school:['화염'], effect:{type:'firstFlame', value:2}},
+  {type:'spell', name:"작은 불씨", cost:1, rarity:'일반', school:['화염'], effect:{type:'firstFlame', value:2}},
   {type:'spell', name:"매서운 한파", cost:1, rarity:'일반', school:['냉기'], effect:{type:'frostbite'}},
   {type:'spell', name:"눈보라", cost:6, rarity:'희귀', school:['냉기'], effect:{type:'blizzard', value:2}},
   {type:'spell', name:"냉기 돌풍", cost:3, rarity:'일반', school:['냉기'], effect:{type:'coldFront', value:1}},
@@ -88,43 +88,43 @@ const CARD_POOL = [
   {type:'spell', name:"숲의 지원군", cost:8, rarity:'특급', school:['자연'], twin:true, effect:{type:'summon', count:5, atk:2, hp:2, token:'나무정령', rush:false}},   // v28: 이중 주문 — 2/2 나무정령 5기 소환 (속공 아님)
   {type:'spell', name:"일식",       cost:2, rarity:'일반', school:['자연'], effect:{type:'eclipse'}},                                                         // v28: 이번 턴에 시전하는 다음 주문을 2번 시전
   {type:'spell', name:"금단의 과일", cost:0, rarity:'일반', school:['자연'], effect:{type:'fruit'}},                                                   // v29: 마나를 모두 소모. 선택 — 아군 하수인 1기 이번 턴 공격력 +소모한 마나 / 방어도 +2배
-  {type:'spell', name:"번개 개화",   cost:0, rarity:'일반', school:['자연'], overload:2, effect:{type:'bloom', value:2}},                                   // v29: 이번 턴 마나 +2 (동전처럼 얻는다) / 과부하 (2)
-  {type:'spell', name:"생물학 프로젝트", cost:1, rarity:'일반', school:['자연'], effect:{type:'growth', value:2}},                                         // v29: 각 플레이어 마나 수정 +2
-  {type:'spell', name:"대지의 비늘", cost:2, rarity:'일반', school:['자연'], effect:{type:'scale', value:1}},                                         // v32: 아군 하수인 +1/+1, 그 하수인의 공격력만큼 방어도
+  {type:'spell', name:"벼락 꽃",   cost:0, rarity:'일반', school:['자연'], overload:2, effect:{type:'bloom', value:2}},                                   // v29: 이번 턴 마나 +2 (동전처럼 얻는다) / 과부하 (2)
+  {type:'spell', name:"공동 재배 실험", cost:1, rarity:'일반', school:['자연'], effect:{type:'growth', value:2}},                                         // v29: 각 플레이어 마나 수정 +2
+  {type:'spell', name:"바위 비늘", cost:2, rarity:'일반', school:['자연'], effect:{type:'scale', value:1}},                                         // v32: 아군 하수인 +1/+1, 그 하수인의 공격력만큼 방어도
   {type:'spell', name:"급속 성장",   cost:2, rarity:'일반', school:['자연'], effect:{type:'crystal', value:1}},                                       // v32: 빈 마나 수정 1개 (최대 마나만 +1)
-  {type:'spell', name:"등산용 간식", cost:2, rarity:'일반', school:['자연'], effect:{type:'snack', value:2}},                                         // v32: 다음 턴에만 마나 +2
-  {type:'spell', name:"키틴질 껍질", cost:2, rarity:'일반', school:['자연'], effect:{type:'carapace', value:4}},                                     // v32: 방어도 +4, 내 다음 턴 시작에 +4 더 (속성은 말씀에 없어 자연으로 정함)
-  {type:'spell', name:"퇴비 만들기", cost:2, rarity:'일반', school:['자연'], effect:{type:'compost', value:1}},                                       // v32: 내 하수인 전체에 죽음의 메아리: 카드 1장 뽑기
+  {type:'spell', name:"든든한 도시락", cost:2, rarity:'일반', school:['자연'], effect:{type:'snack', value:2}},                                         // v32: 다음 턴에만 마나 +2
+  {type:'spell', name:"단단한 갑각", cost:2, rarity:'일반', school:['자연'], effect:{type:'carapace', value:4}},                                     // v32: 방어도 +4, 내 다음 턴 시작에 +4 더 (속성은 말씀에 없어 자연으로 정함)
+  {type:'spell', name:"퇴비 만들기", cost:2, rarity:'일반', school:['자연'], effect:{type:'compost', value:1}},                                       // v32: 내 하수인 전체에 유언: 카드 1장 뽑기
   {type:'spell', name:"새로운 경지", cost:3, rarity:'일반', school:['자연'], effect:{type:'ascend', value:3}},                                       // v144: 최대 마나 +3 (10 초과 가능, 즉시) 후 빈 마나 수정 1개 (10 상한). 속성은 자연
-  {type:'spell', name:"숲의 영혼",   cost:3, rarity:'일반', school:['자연'], effect:{type:'forestSoul', value:1}},                                   // v35: 내 하수인 전체에 죽음의 메아리: 2/2 나무정령 소환
-  {type:'spell', name:"야생의 포효", cost:3, rarity:'일반', school:['자연'], effect:{type:'roar', value:2}},                                         // v35: 이번 턴 내 하수인 전체 공격력 +2 (영웅은 공격하지 않으므로 하수인만). 속성은 자연으로 정함
-  {type:'spell', name:"휘둘러치기", cost:3, rarity:'일반', school:['자연'], effect:{type:'cleave', value:4, other:1}},                               // v38: 적 하나에 피해 4, 다른 모든 적에게 피해 1 (속성은 자연으로 정함)
+  {type:'spell', name:"나무의 맹세",   cost:3, rarity:'일반', school:['자연'], effect:{type:'forestSoul', value:1}},                                   // v35: 내 하수인 전체에 유언: 2/2 나무정령 소환
+  {type:'spell', name:"무리의 포효", cost:3, rarity:'일반', school:['자연'], effect:{type:'roar', value:2}},                                         // v35: 이번 턴 내 하수인 전체 공격력 +2 (영웅은 공격하지 않으므로 하수인만). 속성은 자연으로 정함
+  {type:'spell', name:"할퀴기 일격", cost:3, rarity:'일반', school:['자연'], effect:{type:'cleave', value:4, other:1}},                               // v38: 적 하나에 피해 4, 다른 모든 적에게 피해 1 (속성은 자연으로 정함)
   {type:'spell', name:"줄이기",     cost:3, rarity:'일반', school:['자연'], effect:{type:'shrink', value:1}},                                       // v38: 내 덱의 하수인들 비용·공격력 -1 (최소 0)
-  {type:'spell', name:"흉포한 울음소리", cost:3, rarity:'일반', school:['자연'], effect:{type:'furyCry', value:1}},                                  // v38: 카드 1장 뽑고, 손패 1장당 방어도 +1 (속성은 자연으로 정함)
+  {type:'spell', name:"거친 울부짖음", cost:3, rarity:'일반', school:['자연'], effect:{type:'furyCry', value:1}},                                  // v38: 카드 1장 뽑고, 손패 1장당 방어도 +1 (속성은 자연으로 정함)
   {type:'spell', name:"대지의 수호", cost:5, rarity:'희귀', school:['자연'], effect:{type:'guardian', armor:5, cost:5}},                              // v38: 방어도 5 + 비용 5 하수인 무작위 소환·도발
   {type:'spell', name:"덱 탐색",     cost:2, rarity:'일반', school:['비전'], effect:{type:'deckDiscover', value:2}},                                 // v40: 내 덱에서 서로 다른 카드 최대 3장 중 1장을 복사하여 발견, 비용 -2 (이름·속성은 임의로 정함)
   {type:'spell', name:"공중활강",   cost:7, rarity:'특급', school:['자연'], effect:{type:'glide', atk:1, hp:1, token:'활강병'}},
   {type:'spell', name:"육성", cost:5, rarity:'희귀', school:['자연'], effect:{type:'choice', options:[{name:'마나 수정 2개', effect:{type:'choiceMana', value:2}},{name:'카드 3장 뽑기', effect:{type:'draw', value:3}}]}},
-  {type:'spell', name:"딱정벌레술", cost:5, rarity:'희귀', effect:{type:'choice', options:[{name:'방어도 +12', effect:{type:'choiceArmor', value:12}},{name:'도발 딱정벌레 둘 소환', effect:{type:'summon', count:2, atk:3, hp:3, token:'딱정벌레', taunt:true, rush:false}}]}},
-  {type:'spell', name:"숨겨진 오아시스", cost:6, rarity:'특급', school:['자연'], effect:{type:'choice', options:[{name:'도발 6/6 고대정령 소환', effect:{type:'summon', count:1, atk:6, hp:6, token:'고대정령', taunt:true, rush:false}},{name:'생명력 12 회복', effect:{type:'choiceHeal', value:12}}]}},                    // 속공 1/1 로 전장을 가득 채움. 이번 턴에 모두 죽으면 같은 수만큼 다시 소환
+  {type:'spell', name:"갑충 소환술", cost:5, rarity:'희귀', effect:{type:'choice', options:[{name:'방어도 +12', effect:{type:'choiceArmor', value:12}},{name:'도발 딱정벌레 둘 소환', effect:{type:'summon', count:2, atk:3, hp:3, token:'딱정벌레', taunt:true, rush:false}}]}},
+  {type:'spell', name:"사막의 샘", cost:6, rarity:'특급', school:['자연'], effect:{type:'choice', options:[{name:'도발 6/6 고대정령 소환', effect:{type:'summon', count:1, atk:6, hp:6, token:'고대정령', taunt:true, rush:false}},{name:'생명력 12 회복', effect:{type:'choiceHeal', value:12}}]}},                    // 속공 1/1 로 전장을 가득 채움. 이번 턴에 모두 죽으면 같은 수만큼 다시 소환
   {type:'spell', name:"영원의 불화살", cost:3, rarity:'일반', school:['화염'], effect:{type:'eternalBolt', value:3}},                       // v61: 생명력 흡수. 하수인에게 피해 3, 그 하수인이 죽으면 내 턴 종료 시 이 주문을 손패로 되돌림
-  {type:'spell', name:"아달의 수호자", cost:2, rarity:'일반', school:['신성'], effect:{type:'adalGuardian', atk:2, hp:1, draw:1}},          // v61: 하수인 +2/+1, 카드 1장 뽑기
+  {type:'spell', name:"수호의 축복", cost:2, rarity:'일반', school:['신성'], effect:{type:'adalGuardian', atk:2, hp:1, draw:1}},          // v61: 하수인 +2/+1, 카드 1장 뽑기
   {type:'spell', name:"시간대 수선", cost:3, rarity:'일반', school:['신성'], effect:{type:'timeMend', count:2, discount:3}},                 // v61: 무작위 신성 주문 2장 → 그 비용 합만큼 영웅 회복 → 그 주문들 비용 -3
-  {type:'spell', name:"가시가 돋친 탈것", cost:5, rarity:'희귀', school:['신성'], effect:{type:'thornMount', atk:2, hp:6}},                       // v61: 하수인 +2/+6·도발, 죽으면 스테고돈(도발 2/6) 소환 (v62: 신성)
+  {type:'spell', name:"가시 갑옷 탈것", cost:5, rarity:'희귀', school:['신성'], effect:{type:'thornMount', atk:2, hp:6}},                       // v61: 하수인 +2/+6·도발, 죽으면 스테고돈(도발 2/6) 소환 (v62: 신성)
   {type:'spell', name:"분파", cost:4, rarity:'일반', school:['암흑'], effect:{type:'splitCopy', atk:2, hp:3}},                       // v62: 아군 하수인 +2/+3·모면, 그 하수인을 복사하여 소환
   {type:'spell', name:"저지해라!", cost:4, rarity:'희귀', school:['신성'], effect:{type:'holdLine', atk:5, hp:5}},                     // v62: 하수인 +5/+5·생명력 흡수
-  {type:'spell', name:"아마라의 이야기", cost:10, rarity:'특급', school:['신성'], effect:{type:'amaraTale', value:40}},                              // v62: 내 영웅의 생명력을 40으로 (신성)
+  {type:'spell', name:"생명의 서사시", cost:10, rarity:'특급', school:['신성'], effect:{type:'amaraTale', value:40}},                              // v62: 내 영웅의 생명력을 40으로 (신성)
   {type:'spell', name:"데자뷔", cost:1, rarity:'일반', school:['암흑'], effect:{type:'handDiscover', value:1}},                                       // v62: 상대 손패에서 3장 중 1장을 복사하여 발견, 비용 -1 (암흑)
   {type:'spell', name:"번개 폭풍", cost:3, rarity:'희귀', school:['자연'], overload:1, effect:{type:'rain', value:3}},               // v63: 모든 적 하수인에게 피해 3 / 과부하 (1)
-  {type:'spell', name:"뒤틀린 황천", cost:8, rarity:'특급', school:['암흑'], effect:{type:'destroyAll'}},                              // v63: 모든 하수인 파괴
-  {type:'spell', name:"일거리가 있다던데", cost:1, rarity:'일반', effect:{type:'tauntDiscover', atk:1, hp:2}},                         // v63: 도발 하수인 발견 + 그 하수인에 +1/+2 (무속성)
+  {type:'spell', name:"모든 것을 삼키는 어둠", cost:8, rarity:'특급', school:['암흑'], effect:{type:'destroyAll'}},                              // v63: 모든 하수인 파괴
+  {type:'spell', name:"용병 모집 공고", cost:1, rarity:'일반', effect:{type:'tauntDiscover', atk:1, hp:2}},                         // v63: 도발 하수인 발견 + 그 하수인에 +1/+2 (무속성)
   {type:'spell', name:"물 공급지", cost:8, rarity:'특급', effect:{type:'resurrect', count:3}},                                         // v63: 비용이 가장 높은 내 서로 다른 죽은 도발 하수인 3기 부활 (무속성)
   {type:'spell', name:"적자생존", cost:10, rarity:'특급', effect:{type:'survival', atk:4, hp:4}},                                      // v64: 내 손·덱·전장의 모든 하수인 +4/+4 (무속성)
-  {type:'spell', name:"야생의 선물", cost:8, rarity:'특급', school:['자연'], effect:{type:'wildGift', atk:2, hp:2}},                    // v64: 내 하수인들 +2/+2·도발
-  {type:'spell', name:"궁극의 역병", cost:10, rarity:'특급', effect:{type:'ultPlague', value:5, draw:5, armor:5, atk:5, hp:5}},         // v64: 피해 5, 5장 뽑기, 방어도 5, 5/5 구울 소환 (무속성)
-  {type:'spell', name:"퍼져나가는 역병", cost:6, rarity:'특급', school:['자연'], effect:{type:'spreadPlague', atk:1, hp:5}},                // v65: 도발 1/5 딱정벌레 소환, 상대 하수인이 더 많으면 한 번 더
-  {type:'spell', name:"톨비르 대적", cost:3, rarity:'일반', effect:{type:'replayOne'}},                                                   // v65: 이번 게임에서 낸 비용 1 카드 하나를 다시 냄 (무속성)
-  {type:'minion', name:"신비한 양초맨", cost:2, rarity:'희귀', atk:3, hp:2, lifesteal:true, school:['비전'], effect:{type:'scatter', value:3}},   // v65: 전투의 함성 — 모든 적에게 피해 3을 무작위로 나눔 (생명력 흡수 적용)
+  {type:'spell', name:"숲의 은혜", cost:8, rarity:'특급', school:['자연'], effect:{type:'wildGift', atk:2, hp:2}},                    // v64: 내 하수인들 +2/+2·도발
+  {type:'spell', name:"재앙의 역병", cost:10, rarity:'특급', effect:{type:'ultPlague', value:5, draw:5, armor:5, atk:5, hp:5}},         // v64: 피해 5, 5장 뽑기, 방어도 5, 5/5 구울 소환 (무속성)
+  {type:'spell', name:"번지는 감염", cost:6, rarity:'특급', school:['자연'], effect:{type:'spreadPlague', atk:1, hp:5}},                // v65: 도발 1/5 딱정벌레 소환, 상대 하수인이 더 많으면 한 번 더
+  {type:'spell', name:"되풀이 의식", cost:3, rarity:'일반', effect:{type:'replayOne'}},                                                   // v65: 이번 게임에서 낸 비용 1 카드 하나를 다시 냄 (무속성)
+  {type:'minion', name:"신비한 양초맨", cost:2, rarity:'희귀', atk:3, hp:2, lifesteal:true, school:['비전'], effect:{type:'scatter', value:3}},   // v65: 등장 — 모든 적에게 피해 3을 무작위로 나눔 (생명력 흡수 적용)
   {type:'spell', name:"되감기", cost:2, rarity:'일반', school:['비전'], effect:{type:'rewind', value:2}},                                  // v65: 이번 게임에 내가 시전한 다른 주문을 발견·복사, 비용 -2
   {type:'spell', name:"극한 반복", cost:2, rarity:'전설', effect:{type:'loopDiscover', value:2}},                          // v66: 주문 발견(비용 -2), 내 턴이 끝나면 이 카드를 손패로 되돌림 (무속성)
   {type:'spell', name:"박학다식", cost:2, rarity:'희귀', effect:{type:'learned', max:3, count:2, swap:true}},             // v66: 비용 3 이하 주문을 둘 발견, 그 두 주문의 비용을 서로 바꿈 (v67 수정)
@@ -133,191 +133,191 @@ const CARD_POOL = [
   {type:'spell', name:"점화", cost:2, rarity:'일반', school:['화염'], effect:{type:'ignite', value:2}},                                     // v68: 피해 2, 피해가 1 더 큰 점화를 내 덱에 섞어 넣음 (섞인 점화도 같은 효과로 계속 커짐)
   {type:'spell', name:"얼음 회오리", cost:3, rarity:'일반', school:['냉기'], effect:{type:'iceTornado'}},                                   // v68: 모든 적 하수인 빙결
   {type:'spell', name:"초신성", cost:5, rarity:'희귀', school:['화염'], effect:{type:'supernova', cost:1}},                                  // v68: 손을 무작위 화염 주문으로 가득 채움, 그 주문들의 비용 1
-  {type:'spell', name:"은하계 투영 구슬", cost:10, rarity:'전설', school:['비전'], effect:{type:'galaxyOrb'}},                  // v68: 이번 게임에 시전한 각 비용의 무작위 주문을 다시 시전 (가능하면 적을 대상으로)
-  {type:'spell', name:"왕의 축복", cost:4, rarity:'희귀', school:['신성'], effect:{type:'grantBuff', atk:4, hp:4}},                          // v70: 하수인 +4/+4
+  {type:'spell', name:"별빛 기억 구슬", cost:10, rarity:'전설', school:['비전'], effect:{type:'galaxyOrb'}},                  // v68: 이번 게임에 시전한 각 비용의 무작위 주문을 다시 시전 (가능하면 적을 대상으로)
+  {type:'spell', name:"왕실의 가호", cost:4, rarity:'희귀', school:['신성'], effect:{type:'grantBuff', atk:4, hp:4}},                          // v70: 하수인 +4/+4
   {type:'spell', name:"망자 되살리기", cost:1, rarity:'일반', school:['암흑'], effect:{type:'raiseDead', max:3}},                            // v70: 비용 3 이하 죽은 아군 하수인 1기 부활
   {type:'spell', name:"방부 의식", cost:1, rarity:'일반', effect:{type:'grantBuff', atk:0, hp:0, revive:true}},                           // v70: 하수인에게 환생 (무속성)
   {type:'spell', name:"유령 출몰", cost:3, rarity:'일반', school:['암흑'], effect:{type:'grantBuff', atk:2, hp:3, revive:true, taunt:true}},   // v70: 하수인 +2/+3, 환생·도발
-  {type:'spell', name:"빛폭탄", cost:6, rarity:'희귀', school:['신성'], effect:{type:'lightBomb'}},                                     // v71: 모든 하수인이 자신의 공격력만큼 피해
+  {type:'spell', name:"섬광 심판", cost:6, rarity:'희귀', school:['신성'], effect:{type:'lightBomb'}},                                     // v71: 모든 하수인이 자신의 공격력만큼 피해
   {type:'spell', name:"영혼의 절규", cost:7, rarity:'특급', school:['암흑'], effect:{type:'soulScream'}},                              // v71: 모든 하수인을 상대편의 덱에 섞어 넣음
-  {type:'spell', name:"패거리", cost:2, rarity:'일반', effect:{type:'gang', count:3}},                                                // v71: 하수인 하나를 셋 복사하여 내 덱에 섞어 넣음 (무속성)
+  {type:'spell', name:"한패 만들기", cost:2, rarity:'일반', effect:{type:'gang', count:3}},                                                // v71: 하수인 하나를 셋 복사하여 내 덱에 섞어 넣음 (무속성)
   {type:'spell', name:"소멸", cost:6, rarity:'희귀', effect:{type:'vanishAll'}},                                                      // v72: 모든 하수인을 주인의 손으로 (무속성)
-  {type:'spell', name:"파괴의 정기", cost:3, rarity:'희귀', school:['자연'], overload:2, effect:{type:'essence', min:4, max:5}},          // v72: 모든 하수인에게 피해 4~5 (하수인마다 따로 무작위) / 과부하 (2)
-  {type:'spell', name:"선조의 부름", cost:4, rarity:'희귀', effect:{type:'ancestors'}},                                                 // v72: 각 플레이어 손의 무작위 하수인 소환 (무속성)
-  {type:'spell', name:"용의자 줄 세우기", cost:8, rarity:'특급', overload:2, effect:{type:'lineUp', count:3}},                          // v72: 아군 하수인을 셋 복사하여 소환 / 과부하 (2) (무속성)
+  {type:'spell', name:"원소 붕괴", cost:3, rarity:'희귀', school:['자연'], overload:2, effect:{type:'essence', min:4, max:5}},          // v72: 모든 하수인에게 피해 4~5 (하수인마다 따로 무작위) / 과부하 (2)
+  {type:'spell', name:"대열 소환", cost:4, rarity:'희귀', effect:{type:'ancestors'}},                                                 // v72: 각 플레이어 손의 무작위 하수인 소환 (무속성)
+  {type:'spell', name:"복제 행렬", cost:8, rarity:'특급', overload:2, effect:{type:'lineUp', count:3}},                          // v72: 아군 하수인을 셋 복사하여 소환 / 과부하 (2) (무속성)
   // ---- v74 ----
   {type:'spell', name:"방패 올리기", cost:2, rarity:'일반', effect:{type:'raiseShield', armor:5, draw:1}},
-  {type:'spell', name:"태양샘", cost:9, rarity:'전설', school:['신성'], dynCost:true, effect:{type:'sunwell'}},
-  {type:'minion', name:"교도소 마나스톰", cost:4, atk:5, hp:5, rarity:'전설', effect:{type:'manastorm'}},
-  {type:'minion', name:"대마법사 안토니다스", cost:6, atk:5, hp:7, rarity:'전설', onSpellFireball:true},
-  {type:'minion', name:"속임수 토템", cost:2, rarity:'일반', atk:0, hp:3, tribe:'토템', endCast:3},
+  {type:'spell', name:"빛의 원천", cost:9, rarity:'전설', school:['신성'], dynCost:true, effect:{type:'sunwell'}},
+  {type:'minion', name:"수감된 폭풍술사", cost:4, atk:5, hp:5, rarity:'전설', effect:{type:'manastorm'}},
+  {type:'minion', name:"화염구 대마법사", cost:6, atk:5, hp:7, rarity:'전설', onSpellFireball:true},
+  {type:'minion', name:"변덕 토템", cost:2, rarity:'일반', atk:0, hp:3, tribe:'토템', endCast:3},
   // ---- v75 ----
-  {type:'minion', name:"대마법사 바르고스", cost:3, atk:2, hp:6, rarity:'전설', elusive:true, endRecast:true},
-  {type:'minion', name:"로데브", cost:5, atk:5, hp:5, rarity:'전설', effect:{type:'spellTax', value:5}},
+  {type:'minion', name:"메아리 대마법사", cost:3, atk:2, hp:6, rarity:'전설', elusive:true, endRecast:true},
+  {type:'minion', name:"마력 봉인자", cost:5, atk:5, hp:5, rarity:'전설', effect:{type:'spellTax', value:5}},
   // ---- v76 (룬은 주문 속성 자리에 school 로 넣음) ----
-  {type:'minion', name:"노움 쩝쩝이", cost:6, rarity:'특급', atk:5, hp:6, taunt:true, lifesteal:true, tribe:'언데드', endAttack:true},   // 내 턴이 끝날 때 생명력이 가장 낮은 적을 공격
-  {type:'minion', name:"흉측한 허물", cost:6, rarity:'특급', atk:3, hp:5, school:['혈기'], rc:{'혈기':1}, tribe:'언데드 / 야수', leechBoost:true, effect:{type:'leechSummon', count:2}},   // 룬: 혈기 1개. 거머리가 1 더 훔침 / 전투의 함성: 0/2 거머리 둘
+  {type:'minion', name:"굶주린 시체 포식자", cost:6, rarity:'특급', atk:5, hp:6, taunt:true, lifesteal:true, tribe:'언데드', endAttack:true},   // 내 턴이 끝날 때 생명력이 가장 낮은 적을 공격
+  {type:'minion', name:"거머리 둥지 시체", cost:6, rarity:'특급', atk:3, hp:5, school:['혈기'], rc:{'혈기':1}, tribe:'언데드 / 야수', leechBoost:true, effect:{type:'leechSummon', count:2}},   // 룬: 혈기 1개. 거머리가 1 더 훔침 / 등장: 0/2 거머리 둘
   {type:'spell', name:"흡혈", cost:2, rarity:'일반', school:['혈기'], rc:{'혈기':3}, effect:{type:'bloodSip', value:5, corpses:3}},                                      // 룬: 혈기 3개
   {type:'spell', name:"피의 역병", cost:5, rarity:'희귀', school:['혈기'], rc:{'혈기':2}, effect:{type:'bloodPlague', draw:2, count:2}},                                // 룬: 혈기 2개
   {type:'spell', name:"공기 누출", cost:6, rarity:'희귀', school:['혈기','부정'], rc:{'혈기':1,'부정':1}, effect:{type:'airLeak', atk:5, hp:5, life:5, corpses:5}},               // 룬: 혈기 1개, 부정 1개
   // ---- v78 ----
   {type:'minion', name:"혈기술사", cost:2, rarity:'일반', atk:2, hp:3, school:['혈기'], rc:{'혈기':1}, effect:{type:'bloodDiscover', corpses:2}},                      // 시체를 소모해 혈기 카드 발견 (소모 수는 임의로 2)
-  {type:'minion', name:"마우와 파우", cost:4, atk:2, hp:8, rarity:'전설', school:['혈기','부정'], rc:{'혈기':1,'부정':1}, tribe:'언데드', endCorpses:5, startSpend:{corpses:5, life:5}},
-  {type:'minion', name:"그훈", cost:8, atk:8, hp:1, rarity:'전설', school:['혈기'], rc:{'혈기':3}, effect:{type:'bloodDrain', value:6}},
+  {type:'minion', name:"쌍둥이 시체 거인", cost:4, atk:2, hp:8, rarity:'전설', school:['혈기','부정'], rc:{'혈기':1,'부정':1}, tribe:'언데드', endCorpses:5, startSpend:{corpses:5, life:5}},
+  {type:'minion', name:"피의 군주", cost:8, atk:8, hp:1, rarity:'전설', school:['혈기'], rc:{'혈기':3}, effect:{type:'bloodDrain', value:6}},
   {type:'minion', name:"전장의 강령술사", cost:2, rarity:'일반', atk:2, hp:2, school:['부정'], runes:{unholy:1}, endRaise:true},
-  {type:'minion', name:"소리치는 요들러", cost:4, rarity:'희귀', atk:3, hp:4, tribe:'언데드', effect:{type:'yodel'}},
-  {type:'minion', name:"악성 공포물", cost:4, rarity:'희귀', atk:2, hp:4, tribe:'언데드', revive:true, endCopy:{corpses:4}},
-  {type:'minion', name:"어둠가시 바느질꾼", cost:4, rarity:'희귀', atk:2, hp:4, tribe:'언데드 / 가시멧돼지', school:['부정'], runes:{unholy:1}, endScatter:'atk'},
+  {type:'minion', name:"울부짖는 망령", cost:4, rarity:'희귀', atk:3, hp:4, tribe:'언데드', effect:{type:'yodel'}},
+  {type:'minion', name:"되살아나는 공포", cost:4, rarity:'희귀', atk:2, hp:4, tribe:'언데드', revive:true, endCopy:{corpses:4}},
+  {type:'minion', name:"가시 시체 재봉사", cost:4, rarity:'희귀', atk:2, hp:4, tribe:'언데드 / 가시멧돼지', school:['부정'], runes:{unholy:1}, endScatter:'atk'},
   {type:'spell', name:"시체 폭발", cost:5, rarity:'희귀', school:['암흑'], runes:{blood:2}, effect:{type:'corpseBlast'}},
-  {type:'minion', name:"피의 기록관 말라코르", cost:2, rarity:'전설', atk:2, hp:3, school:['혈기'], rc:{'혈기':1}, effect:{type:'malakor'}},   // v97
-  {type:'minion', name:"거머리 어미 발토라", cost:6, rarity:'전설', atk:5, hp:5, school:['혈기'], rc:{'혈기':1}, effect:{type:'valtora'}},   // v97
+  {type:'minion', name:"피의 기록관", cost:2, rarity:'전설', atk:2, hp:3, school:['혈기'], rc:{'혈기':1}, effect:{type:'malakor'}},   // v97
+  {type:'minion', name:"거머리 여왕", cost:6, rarity:'전설', atk:5, hp:5, school:['혈기'], rc:{'혈기':1}, effect:{type:'valtora'}},   // v97
   {type:'spell', name:"피의 소용돌이", cost:5, school:['암흑'], runes:{blood:2}, rarity:'특급', effect:{type:'bloodVortex'}},   // v97
   {type:'minion', name:"시초자", cost:7, rarity:'전설', atk:7, hp:9, effect:{type:'originator'}},   // v97
   // ---- v79 악마 ----
-  {type:'minion', name:"분노의 여사제", cost:7, rarity:'희귀', atk:6, hp:7, tribe:'악마', endScatter:6},
-  {type:'minion', name:"신화의 공포", cost:7, rarity:'특급', atk:4, hp:10, lifesteal:true, tribe:'악마 / 야수', endBait:true},
-  {type:'minion', name:"타락심장 심문관", cost:8, rarity:'특급', atk:8, hp:8, taunt:true, tribe:'악마', spellAura:2},
-  {type:'minion', name:"고대의 공허 사냥개", cost:9, rarity:'특급', atk:10, hp:10, tribe:'악마', endSteal:true},
-  {type:'minion', name:"원한 맺힌 소환사", cost:5, rarity:'희귀', atk:4, hp:4, effect:{type:'revealSummon'}},
-  {type:'minion', name:"가젯잔 경매인", cost:5, rarity:'희귀', atk:4, hp:4, onSpellDraw:true},
+  {type:'minion', name:"칼춤 악마", cost:7, rarity:'희귀', atk:6, hp:7, tribe:'악마', endScatter:6},
+  {type:'minion', name:"미끼 사냥 공포", cost:7, rarity:'특급', atk:4, hp:10, lifesteal:true, tribe:'악마 / 야수', endBait:true},
+  {type:'minion', name:"타락한 심문관", cost:8, rarity:'특급', atk:8, hp:8, taunt:true, tribe:'악마', spellAura:2},
+  {type:'minion', name:"공허 포식견", cost:9, rarity:'특급', atk:10, hp:10, tribe:'악마', endSteal:true},
+  {type:'minion', name:"계시 소환사", cost:5, rarity:'희귀', atk:4, hp:4, effect:{type:'revealSummon'}},
+  {type:'minion', name:"뒷골목 경매인", cost:5, rarity:'희귀', atk:4, hp:4, onSpellDraw:true},
   {type:'minion', name:"비전 거인", cost:12, rarity:'특급', atk:8, hp:8, dynCost:'cast'},
   {type:'spell', name:"엄폐", cost:1, rarity:'일반', effect:{type:'cover'}},
   // ---- v80 ----
-  {type:'minion', name:"별 관측자", cost:8, atk:8, hp:8, rarity:'희귀', tribe:'야수', taunt:true, elusive:true, spellburst:{heroAtk:8, armor:8}},   // 주문폭주: 내가 주문을 시전한 뒤 1회 — 이번 턴 영웅 공격력 +8, 방어도 +8 (발동 후 키워드 사라짐)
-  {type:'minion', name:"지저왕", cost:7, atk:6, hp:6, rarity:'특급', tribe:'언데드', rush:true, effect:{type:'armorCry', value:6}, deathArmor:6},   // 속공 / 전투의 함성과 죽음의 메아리: 방어도 6
+  {type:'minion', name:"별 관측자", cost:8, atk:8, hp:8, rarity:'희귀', tribe:'야수', taunt:true, elusive:true, spellburst:{heroAtk:8, armor:8}},   // 과충전: 내가 주문을 시전한 뒤 1회 — 이번 턴 영웅 공격력 +8, 방어도 +8 (발동 후 키워드 사라짐)
+  {type:'minion', name:"땅굴 군주", cost:7, atk:6, hp:6, rarity:'특급', tribe:'언데드', rush:true, effect:{type:'armorCry', value:6}, deathArmor:6},   // 속공 / 등장과 유언: 방어도 6
   // ---- v81 ----
-  {type:'minion', name:"지진발", cost:8, atk:8, hp:8, rarity:'희귀', tribe:'야수', taunt:true, elusive:true, deathBuffAll:3},   // 죽음의 메아리: 내 손과 덱의 모든 하수인 +3/+3
-  {type:'minion', name:"하드로녹스", cost:9, atk:3, hp:7, rarity:'전설', tribe:'야수', deathGrave:true},   // 죽음의 메아리: 이번 게임에 죽은 내 도발 하수인들을 소환
-  {type:'minion', name:"아비아나", cost:9, atk:5, hp:5, rarity:'전설', costOne:true},   // 내 하수인(카드)의 비용이 1
-  {type:'minion', name:"티란투스", cost:10, atk:14, hp:14, rarity:'전설', tribe:'야수', taunt:true, elusive:true},
-  {type:'minion', name:"잊힌 왕 쿤", cost:10, atk:7, hp:7, rarity:'전설', tribe:'언데드', effect:{type:'kuhn'}},
+  {type:'minion', name:"대지 울림 짐승", cost:8, atk:8, hp:8, rarity:'희귀', tribe:'야수', taunt:true, elusive:true, deathBuffAll:3},   // 유언: 내 손과 덱의 모든 하수인 +3/+3
+  {type:'minion', name:"무덤 거미 여왕", cost:9, atk:3, hp:7, rarity:'전설', tribe:'야수', deathGrave:true},   // 유언: 이번 게임에 죽은 내 도발 하수인들을 소환
+  {type:'minion', name:"섭리의 수호자", cost:9, atk:5, hp:5, rarity:'전설', costOne:true},   // 내 하수인(카드)의 비용이 1
+  {type:'minion', name:"원시 거대 공룡", cost:10, atk:14, hp:14, rarity:'전설', tribe:'야수', taunt:true, elusive:true},
+  {type:'minion', name:"잊힌 망자왕", cost:10, atk:7, hp:7, rarity:'전설', tribe:'언데드', effect:{type:'kuhn'}},
   // ---- v100 독성 / 연꽃 / 독사 (이미지 연결 없음. 비용·능력치·주문 이름은 임의로 정함) ----
   {type:'minion', name:"왕궁정원사", cost:4, rarity:'희귀', atk:2, hp:4, endLotus:true},   // 내 턴이 끝날 때마다 「피어오르는 연꽃」(0/2, 은신, 내 턴 시작 시 피해 입은 아군 무작위 1명 3 회복) 소환
   {type:'minion', name:"뱀사육사", cost:5, rarity:'희귀', atk:2, hp:4, endViper:true},      // 내 턴이 끝날 때 「치명적인 독사」(1/1 속공·은신·독성) 1마리 소환
   // ---- v103 (비용·능력치는 지정값) ----
   {type:'spell', name:"공허의 영혼", cost:1, rarity:'일반', effect:{type:'voidSoul', value:1}},   // 비용 N 무작위 하수인 소환 → 미래의 공허의 영혼 개선(N+1), 내 턴이 끝나면 손패로 돌아온다
-  {type:'minion', name:"카인 선퓨리", cost:4, rarity:'전설', atk:3, hp:5, charge:true, ignoreTaunt:true},
-  {type:'minion', name:"강철나무 골렘", cost:4, rarity:'희귀', atk:3, hp:6, taunt:true, needArmor:3},
-  {type:'minion', name:"여름의 평화수호자", cost:5, rarity:'희귀', atk:4, hp:5, effect:{type:'peaceDraw', min:6, count:2, discount:2}},
+  {type:'minion', name:"돌격 악마사냥꾼", cost:4, rarity:'전설', atk:3, hp:5, charge:true, ignoreTaunt:true},
+  {type:'minion', name:"철목 골렘", cost:4, rarity:'희귀', atk:3, hp:6, taunt:true, needArmor:3},
+  {type:'minion', name:"초원의 평화지기", cost:5, rarity:'희귀', atk:4, hp:5, effect:{type:'peaceDraw', min:6, count:2, discount:2}},
   // ---- v104 ----
   {type:'minion', name:"늘푸른 수사슴", cost:6, rarity:'특급', atk:6, hp:7, tribe:'야수', elusive:true, lifesteal:true, taunt:true},
   {type:'minion', name:"재생의 드루이드", cost:5, rarity:'희귀', atk:3, hp:5, school:['자연'], effect:{type:'natureCast', count:3}},
-  {type:'minion', name:"토이란투스", cost:6, rarity:'특급', atk:7, hp:7, tribe:'야수', taunt:true, elusive:true, effect:{type:'crystalBuff', need:10, value:7}},
+  {type:'minion', name:"수정 공룡", cost:6, rarity:'특급', atk:7, hp:7, tribe:'야수', taunt:true, elusive:true, effect:{type:'crystalBuff', need:10, value:7}},
   {type:'minion', name:"날개 달린 수호자", cost:7, rarity:'특급', atk:6, hp:8, tribe:'야수', taunt:true, revive:true, reviveFull:true, elusive:true},
   {type:'spell', name:"독사 떼", cost:4, rarity:'희귀', school:['자연'], hunter:true, effect:{type:'summon', count:3, atk:1, hp:1, token:'치명적인 독사', kw:['은신','독성'], extra:{stealth:true, poison:true}}},   // 속공·은신·독성 1/1 세 마리 소환   // 선택: 방어도 +10 / 마나 수정 모두 회복
   // ---- v105 사냥꾼 (hunter:true 는 '사냥꾼 카드' 표시. 야수 하수인도 모두 사냥꾼 카드로 친다 — isHunter 참고) ----
   {type:'spell', name:"실탄 장전", cost:0, rarity:'일반', hunter:true, effect:{type:'bulletLoad'}},   // 이번 턴에 내가 주문을 시전할 때마다 무작위 사냥꾼 카드를 손패로
   {type:'spell', name:"성게 가시", cost:1, rarity:'일반', hunter:true, effect:{type:'spellPoison'}},   // 이번 턴에 내 주문이 독성을 가짐
-  {type:'minion', name:"사스퀙", cost:7, rarity:'전설', atk:4, hp:5, tribe:'야수', hunter:true, effect:{type:'repeatLast'}},   // 전투의 함성: 이전 턴에 낸 모든 카드를 반복
-  {type:'minion', name:"골드린", cost:9, rarity:'전설', atk:9, hp:9, tribe:'야수', hunter:true, rush:true, beastDouble:true},   // 속공 / 아군 야수가 주는 피해 2배
-  {type:'minion', name:"왕 크루쉬", cost:9, rarity:'전설', atk:8, hp:8, tribe:'야수', hunter:true, charge:true},
+  {type:'minion', name:"흉내쟁이 큰새", cost:7, rarity:'전설', atk:4, hp:5, tribe:'야수', hunter:true, effect:{type:'repeatLast'}},   // 등장: 이전 턴에 낸 모든 카드를 반복
+  {type:'minion', name:"황금 늑대왕", cost:9, rarity:'전설', atk:9, hp:9, tribe:'야수', hunter:true, rush:true, beastDouble:true},   // 속공 / 아군 야수가 주는 피해 2배
+  {type:'minion', name:"공룡왕", cost:9, rarity:'전설', atk:8, hp:8, tribe:'야수', hunter:true, charge:true},
   // ---- v106 ----
-  {type:'minion', name:"밴조사우루스", cost:10, rarity:'특급', atk:5, hp:6, tribe:'야수', rush:true, onAttackBeast:true},
-  {type:'minion', name:"에메리스", cost:10, rarity:'전설', atk:8, hp:8, tribe:'용족', effect:{type:'doubleHand'}},
+  {type:'minion', name:"울림 공룡", cost:10, rarity:'특급', atk:5, hp:6, tribe:'야수', rush:true, onAttackBeast:true},
+  {type:'minion', name:"꿈의 용", cost:10, rarity:'전설', atk:8, hp:8, tribe:'용족', effect:{type:'doubleHand'}},
   {type:'minion', name:"불꽃꼬리 전사", cost:3, rarity:'일반', atk:2, hp:4, onSpellScatter:2},
   {type:'minion', name:"주문사수", cost:3, rarity:'일반', atk:3, hp:4, effect:{type:'spellHunt'}},
   {type:'minion', name:"깊은물 기원사", cost:4, rarity:'일반', atk:3, hp:4, tribe:'해적', effect:{type:'drawSpellArmor'}},
-  {type:'minion', name:"바르덴 던그래스프", cost:4, rarity:'전설', atk:3, hp:3, effect:{type:'frostWarden', value:4}},
-  {type:'minion', name:"요그사론의 종복", cost:5, rarity:'희귀', atk:5, hp:4, elusive:true, endCastMin:5},
+  {type:'minion', name:"서리 감시관", cost:4, rarity:'전설', atk:3, hp:3, effect:{type:'frostWarden', value:4}},
+  {type:'minion', name:"광기의 신도", cost:5, rarity:'희귀', atk:5, hp:4, elusive:true, endCastMin:5},
   {type:'minion', name:"진눈깨비 스케이터", cost:5, rarity:'희귀', atk:3, hp:4, tribe:'정령', mini:true, effect:{type:'sleetFreeze'}},
-  {type:'minion', name:"시프", cost:6, rarity:'희귀', atk:4, hp:6, spellDmgSchools:true},
-  {type:'minion', name:"회색 현자 앵무새", cost:6, rarity:'희귀', atk:4, hp:5, tribe:'야수', effect:{type:'parrot', min:6}},
+  {type:'minion', name:"다학파 마법사", cost:6, rarity:'희귀', atk:4, hp:6, spellDmgSchools:true},
+  {type:'minion', name:"따라말하는 앵무새", cost:6, rarity:'희귀', atk:4, hp:5, tribe:'야수', effect:{type:'parrot', min:6}},
   // ---- v108 ----
   {type:'spell', name:"대규모 변이", cost:7, rarity:'특급', school:['비전'], effect:{type:'massTransform'}},   // 모든 하수인(양쪽 전부)을 1/1 양으로
-  {type:'minion', name:"용소환사 알라나", cost:9, rarity:'전설', atk:3, hp:3, effect:{type:'alana', min:5}},   // 전투의 함성: 이번 게임에 내가 비용 5 이상 주문을 시전한 횟수만큼 5/5 용 소환
+  {type:'minion', name:"용 소환사", cost:9, rarity:'전설', atk:3, hp:3, effect:{type:'alana', min:5}},   // 등장: 이번 게임에 내가 비용 5 이상 주문을 시전한 횟수만큼 5/5 용 소환
   {type:'minion', name:"화염용", cost:5, rarity:'일반', atk:5, hp:5, tribe:'용족'},
-  {type:'minion', name:"불굴의 토레스", cost:5, rarity:'전설', atk:3, hp:4, taunt:true, shield:true, shieldAura:3},   // 내 보호막들은 세 번 피해를 받아야 부서진다
+  {type:'minion', name:"불굴의 방패기사", cost:5, rarity:'전설', atk:3, hp:4, taunt:true, shield:true, shieldAura:3},   // 내 보호막들은 세 번 피해를 받아야 부서진다
   // ---- v109 ----
-  {type:'minion', name:"태양지기 타림", cost:6, rarity:'전설', atk:3, hp:7, taunt:true, effect:{type:'tarim', value:3}},   // 전투의 함성: 다른 모든 하수인의 공격력·생명력을 3으로
-  {type:'minion', name:"성기사 에드릭", cost:7, rarity:'전설', atk:3, hp:7, effect:{type:'edric', value:1}},   // 전투의 함성: 모든 적 하수인의 공격력을 1로
-  {type:'minion', name:"안녕극단", cost:9, rarity:'특급', atk:3, hp:6, tribe:'기계', taunt:true, shield:true, deathMachines:3},   // 죽음의 메아리: 도발·보호막 1/2 기계 셋
-  {type:'minion', name:"정신의 창조술사", cost:1, rarity:'일반', atk:1, hp:2, tribe:'언데드', effect:{type:'mindCopy'}},   // 전투의 함성: 상대 덱의 카드를 복사해 내 손으로
-  {type:'minion', name:"세데크 장막직공", cost:2, rarity:'일반', atk:2, hp:3, spellWeave:true},   // 내가 하수인에게 주문을 시전한 후, 하수인을 대상으로 지정할 수 있는 주문을 손으로
+  {type:'minion', name:"태양 균형자", cost:6, rarity:'전설', atk:3, hp:7, taunt:true, effect:{type:'tarim', value:3}},   // 등장: 다른 모든 하수인의 공격력·생명력을 3으로
+  {type:'minion', name:"겸손의 성기사", cost:7, rarity:'전설', atk:3, hp:7, effect:{type:'edric', value:1}},   // 등장: 모든 적 하수인의 공격력을 1로
+  {type:'minion', name:"꼬마 로봇 악단", cost:9, rarity:'특급', atk:3, hp:6, tribe:'기계', taunt:true, shield:true, deathMachines:3},   // 유언: 도발·보호막 1/2 기계 셋
+  {type:'minion', name:"정신의 창조술사", cost:1, rarity:'일반', atk:1, hp:2, tribe:'언데드', effect:{type:'mindCopy'}},   // 등장: 상대 덱의 카드를 복사해 내 손으로
+  {type:'minion', name:"장막 직공", cost:2, rarity:'일반', atk:2, hp:3, spellWeave:true},   // 내가 하수인에게 주문을 시전한 후, 하수인을 대상으로 지정할 수 있는 주문을 손으로
   // ---- v110 ----
   {type:'spell', name:"영혼 채찍", cost:2, rarity:'일반', school:['암흑'], effect:{type:'soulWhip', value:1}},   // 생명력 흡수, 모든 하수인에게 피해 1
   {type:'spell', name:"생각 훔치기", cost:2, rarity:'일반', school:['암흑'], effect:{type:'mindSteal', value:2}},   // 상대 덱에서 카드 2장 복사해 손으로
   {type:'spell', name:"정신 분열", cost:2, rarity:'일반', school:['암흑'], effect:{type:'mindBlast', value:5}},   // 적 영웅에게 피해 5
-  {type:'spell', name:"천상의 정신", cost:2, rarity:'일반', school:['신성'], effect:{type:'divineSpirit'}},   // 하수인의 생명력 2배
-  {type:'minion', name:"대주교 베네딕투스", cost:7, rarity:'전설', atk:4, hp:6, effect:{type:'benedictus', value:1}},   // 전투의 함성: 상대 덱을 복사해 내 덱에 섞고 그 카드들의 비용 -1
+  {type:'spell', name:"곱절의 생명", cost:2, rarity:'일반', school:['신성'], effect:{type:'divineSpirit'}},   // 하수인의 생명력 2배
+  {type:'minion', name:"거울의 대주교", cost:7, rarity:'전설', atk:4, hp:6, effect:{type:'benedictus', value:1}},   // 등장: 상대 덱을 복사해 내 덱에 섞고 그 카드들의 비용 -1
   // ---- v111 ----
   {type:'spell', name:"암흑의 정수", cost:7, rarity:'특급', school:['암흑'], effect:{type:'darkEssence'}},   // 내 덱의 무작위 하수인을 복사해 5/5로 소환
-  {type:'minion', name:"그훈의 피", cost:9, rarity:'특급', atk:8, hp:8, tribe:'정령', taunt:true, endDeckCopy:true},   // 내 턴이 끝날 때 내 덱의 하수인을 복사해 5/5로 소환
-  {type:'minion', name:"흑요석 석상", cost:9, rarity:'특급', atk:4, hp:8, taunt:true, lifesteal:true, deathKill:true},   // 죽음의 메아리: 무작위 적 하수인 처치
+  {type:'minion', name:"핏빛 정수 거인", cost:9, rarity:'특급', atk:8, hp:8, tribe:'정령', taunt:true, endDeckCopy:true},   // 내 턴이 끝날 때 내 덱의 하수인을 복사해 5/5로 소환
+  {type:'minion', name:"흑요석 석상", cost:9, rarity:'특급', atk:4, hp:8, taunt:true, lifesteal:true, deathKill:true},   // 유언: 무작위 적 하수인 처치
   {type:'spell', name:"대규모 부활", cost:9, rarity:'특급', school:['신성'], effect:{type:'massRaise', count:3}},   // 이번 게임에 죽은 아군 하수인 셋을 무작위로 소환
   {type:'minion', name:"무덤괴수", cost:12, rarity:'특급', atk:7, hp:8, tribe:'언데드', taunt:true, dynCost:'cast'},   // 도발, 이번 게임에 내가 시전한 주문 1개당 비용 -1 (비전 거인과 같은 방식)
-  {type:'spell', name:"칼날 부채", cost:2, rarity:'일반', effect:{type:'fanKnives'}},   // 모든 적 하수인에게 피해 1, 카드 1장 뽑기
-  {type:'spell', name:"타르막", cost:1, rarity:'일반', effect:{type:'tarmak'}},   // 이번 턴 하수인이 받는 피해 2배, 대상에게 피해 1
-  {type:'minion', name:"얼굴 수집가", cost:3, rarity:'희귀', atk:2, hp:2, echo:true, effect:{type:'faceCollector', min:5, discount:5}},   // 잔상 / 전투의 함성: 비용 5 이상 무작위 하수인을 손으로 (비용 -5)
-  {type:'minion', name:"소냐 워터댄서", cost:4, rarity:'전설', atk:3, hp:3, sonya:true},   // 비용 1 하수인을 낸 후, 그 하수인의 비용 0 복사본을 손으로
+  {type:'spell', name:"단검 흩뿌리기", cost:2, rarity:'일반', effect:{type:'fanKnives'}},   // 모든 적 하수인에게 피해 1, 카드 1장 뽑기
+  {type:'spell', name:"약점 노출", cost:1, rarity:'일반', effect:{type:'tarmak'}},   // 이번 턴 하수인이 받는 피해 2배, 대상에게 피해 1
+  {type:'minion', name:"가면 수집가", cost:3, rarity:'희귀', atk:2, hp:2, echo:true, effect:{type:'faceCollector', min:5, discount:5}},   // 잔상 / 등장: 비용 5 이상 무작위 하수인을 손으로 (비용 -5)
+  {type:'minion', name:"물결 무희", cost:4, rarity:'전설', atk:3, hp:3, sonya:true},   // 비용 1 하수인을 낸 후, 그 하수인의 비용 0 복사본을 손으로
   {type:'minion', name:"엘프 음악가", cost:3, rarity:'일반', atk:3, hp:3, effect:{type:'comboDraw', count:2}},   // 연계: 내 덱에서 하수인 둘 뽑기
-  {type:'minion', name:"무역왕 갤리윅스", cost:6, rarity:'전설', atk:5, hp:8, gally:true},   // 상대가 주문을 시전할 때마다 그 주문을 복사해 내 손으로, 상대에게 동전
+  {type:'minion', name:"해적 무역왕", cost:6, rarity:'전설', atk:5, hp:8, gally:true},   // 상대가 주문을 시전할 때마다 그 주문을 복사해 내 손으로, 상대에게 동전
   {type:'spell', name:"전력 질주", cost:5, rarity:'희귀', effect:{type:'draw', value:4}},
   {type:'spell', name:"환영의 물약", cost:4, rarity:'희귀', school:['비전'], effect:{type:'illusionPotion'}},   // 아군 하수인을 1/1 비용 1 복사본으로 손패에
-  {type:'spell', name:"오메가 조립 시설", cost:1, rarity:'일반', effect:{type:'omegaFacility'}},   // 기계 발견 (마나 수정 10개면 3장 모두)
-  {type:'minion', name:"겁에 질린 조합원", cost:2, rarity:'일반', atk:2, hp:3, taunt:true, effect:{type:'tauntDiscoverBc'}},   // 도발 / 전투의 함성: 도발 하수인 발견
+  {type:'spell', name:"기계 조립 공장", cost:1, rarity:'일반', effect:{type:'omegaFacility'}},   // 기계 발견 (마나 수정 10개면 3장 모두)
+  {type:'minion', name:"겁에 질린 조합원", cost:2, rarity:'일반', atk:2, hp:3, taunt:true, effect:{type:'tauntDiscoverBc'}},   // 도발 / 등장: 도발 하수인 발견
   {type:'spell', name:"용의 포효", cost:2, rarity:'일반', effect:{type:'dragonRoar', count:2}},   // 무작위 용족 둘을 손으로
-  {type:'minion', name:"대장군 분", cost:4, rarity:'전설', atk:4, hp:3, effect:{type:'copyDragons'}},   // 전투의 함성: 내 손의 모든 용족을 복사
+  {type:'minion', name:"용 군단 사령관", cost:4, rarity:'전설', atk:4, hp:3, effect:{type:'copyDragons'}},   // 등장: 내 손의 모든 용족을 복사
   {type:'spell', name:"앙심", cost:4, rarity:'희귀', effect:{type:'grudge'}},   // 모든 하수인에게 피해 2, 처치한 하수인 하나당 방어도 +2
-  {type:'minion', name:"다리우스 크롤리", cost:5, rarity:'전설', atk:4, hp:5, rush:true, crowley:2},   // 속공 / 공격으로 다른 하수인을 처치하면 +2/+2
-  {type:'minion', name:"대지조각가 이프", cost:8, rarity:'전설', atk:4, hp:8, endArmorSummon:true},   // 내 턴이 끝날 때 방어도(최대 10)와 같은 비용의 무작위 하수인 소환
-  {type:'minion', name:"토르톨라", cost:10, rarity:'전설', atk:1, hp:30, tribe:'야수', taunt:true, elusive:true, tortola:true},   // 도발·모면 / 피해를 받으면 방어도 +1, 공격력 +1
+  {type:'minion', name:"성문 수비대장", cost:5, rarity:'전설', atk:4, hp:5, rush:true, crowley:2},   // 속공 / 공격으로 다른 하수인을 처치하면 +2/+2
+  {type:'minion', name:"대지 조각가", cost:8, rarity:'전설', atk:4, hp:8, endArmorSummon:true},   // 내 턴이 끝날 때 방어도(최대 10)와 같은 비용의 무작위 하수인 소환
+  {type:'minion', name:"바위 거북", cost:10, rarity:'전설', atk:1, hp:30, tribe:'야수', taunt:true, elusive:true, tortola:true},   // 도발·모면 / 피해를 받으면 방어도 +1, 공격력 +1
   {type:'minion', name:"문제아", cost:8, rarity:'특급', atk:6, hp:8, endBully:true},   // 내 턴이 끝날 때 무작위 적을 공격하는 3/3 불량배 둘 소환
-  {type:'minion', name:"두억시니", cost:9, rarity:'특급', atk:6, hp:6, effect:{type:'repeatAll'}},   // 전투의 함성: 이번 게임에 내가 낸 다른 전투의 함성 효과들을 반복 (대상 무작위)
+  {type:'minion', name:"두억시니", cost:9, rarity:'특급', atk:6, hp:6, effect:{type:'repeatAll'}},   // 등장: 이번 게임에 내가 낸 다른 등장 효과들을 반복 (대상 무작위)
   {type:'spell', name:"해일", cost:8, rarity:'특급', school:['자연'], effect:{type:'soulWhip', value:3}},   // 생명력 흡수, 모든 하수인에게 피해 3
   {type:'minion', name:"걸어 다니는 샘", cost:8, rarity:'특급', atk:4, hp:8, tribe:'정령', lifesteal:true, rush:true, windfury:true},   // 생명력 흡수, 속공, 질풍
-  {type:'minion', name:"눈사태 수호자", cost:6, rarity:'희귀', atk:5, hp:5, tribe:'정령', effect:{type:'avalancheFreeze'}},   // 전투의 함성: 다른 모든 하수인 빙결
+  {type:'minion', name:"눈사태 수호자", cost:6, rarity:'희귀', atk:5, hp:5, tribe:'정령', effect:{type:'avalancheFreeze'}},   // 등장: 다른 모든 하수인 빙결
   {type:'spell', name:"퇴화", cost:2, rarity:'일반', school:['자연'], effect:{type:'devolve'}},   // 모든 적 하수인을 비용이 (1) 낮은 무작위 하수인으로 변신
   // ---- v112 ----
   {type:'spell', name:"불안정한 진화", cost:1, rarity:'일반', school:['자연'], echo:true, effect:{type:'upgradeMinion'}},   // 잔상 / 아군 하수인을 비용이 (1) 높은 무작위 하수인으로 변신
-  {type:'minion', name:"깊은무쇠 트로그", cost:1, rarity:'일반', atk:1, hp:2, trogg:true},   // 상대편이 주문을 시전한 후에, 다른 깊은무쇠 트로그를 소환
-  {type:'minion', name:"교단 수련사", cost:2, rarity:'일반', atk:3, hp:2, effect:{type:'spellTax', value:1}},   // 전투의 함성: 다음 턴 상대 주문 비용 +1
-  {type:'minion', name:"보석 박힌 딱정벌레", cost:2, rarity:'일반', atk:1, hp:1, tribe:'야수', effect:{type:'discoverCost', cost:3}},   // 전투의 함성: 비용 3인 카드 발견
-  {type:'minion', name:"비겁한 밀고자", cost:2, rarity:'일반', atk:2, hp:6, taunt:true, effect:{type:'snitch'}},   // 도발 / 전투의 함성: 상대가 손에서 무작위 하수인을 소환 (그 하수인의 전투의 함성은 발동 안 함)
-  {type:'minion', name:"안녕로봇", cost:2, rarity:'희귀', atk:1, hp:2, tribe:'기계', taunt:true, shield:true},   // 도발, 천상의 보호막(=보호막)
-  {type:'minion', name:"데스윙", cost:10, rarity:'전설', atk:12, hp:12, tribe:'용족', effect:{type:'deathwing'}},   // 전투의 함성: 다른 모든 하수인 처치, 내 손패 모두 버림
-  {type:'minion', name:"광염의 피락", cost:8, rarity:'전설', atk:7, hp:7, tribe:'용족', fireImmune:true, effect:{type:'pyroar', total:15}},   // 화염 주문 면역 / 전투의 함성: 마나 합 15의 화염 주문들을 무작위 적에게 시전
-  {type:'minion', name:"해방된 분노 이샤라즈", cost:10, rarity:'전설', atk:10, hp:10, endDeckSummon:true},   // 내 턴이 끝날 때 내 덱에서 하수인 소환
+  {type:'minion', name:"바위굴 괴물", cost:1, rarity:'일반', atk:1, hp:2, trogg:true},   // 상대편이 주문을 시전한 후에, 다른 바위굴 괴물을 소환
+  {type:'minion', name:"교단 수련사", cost:2, rarity:'일반', atk:3, hp:2, effect:{type:'spellTax', value:1}},   // 등장: 다음 턴 상대 주문 비용 +1
+  {type:'minion', name:"보석 박힌 딱정벌레", cost:2, rarity:'일반', atk:1, hp:1, tribe:'야수', effect:{type:'discoverCost', cost:3}},   // 등장: 비용 3인 카드 발견
+  {type:'minion', name:"비겁한 밀고자", cost:2, rarity:'일반', atk:2, hp:6, taunt:true, effect:{type:'snitch'}},   // 도발 / 등장: 상대가 손에서 무작위 하수인을 소환 (그 하수인의 등장은 발동 안 함)
+  {type:'minion', name:"꼬마 방패로봇", cost:2, rarity:'희귀', atk:1, hp:2, tribe:'기계', taunt:true, shield:true},   // 도발, 보호막
+  {type:'minion', name:"파멸의 흑룡", cost:10, rarity:'전설', atk:12, hp:12, tribe:'용족', effect:{type:'deathwing'}},   // 등장: 다른 모든 하수인 처치, 내 손패 모두 버림
+  {type:'minion', name:"화염 폭풍 용", cost:8, rarity:'전설', atk:7, hp:7, tribe:'용족', fireImmune:true, effect:{type:'pyroar', total:15}},   // 화염 주문 면역 / 등장: 마나 합 15의 화염 주문들을 무작위 적에게 시전
+  {type:'minion', name:"해방된 분노", cost:10, rarity:'전설', atk:10, hp:10, endDeckSummon:true},   // 내 턴이 끝날 때 내 덱에서 하수인 소환
   {type:'minion', name:"허기진 포식자", cost:9, rarity:'특급', atk:4, hp:4, infuse:5, effect:{type:'devour', value:5}},   // 적 하수인을 잡아먹고 능력치 획득 / 주입(5): 양옆도 잡아먹음
-  {type:'minion', name:"부상당한 크발디르", cost:1, rarity:'전설', atk:2, hp:4, tribe:'언데드', effect:{type:'selfHurt', value:3}},   // 전투의 함성: 내 영웅에게 피해 3
-  {type:'minion', name:"부정한 알", cost:1, rarity:'일반', atk:0, hp:2, tribe:'언데드', eggChicken:true},   // 죽음의 메아리: 3/3 언데드 닭 소환 / 내 턴이 끝날 때마다 그 닭 +1/+1
-  {type:'minion', name:"불안정한 프로토타입", cost:1, rarity:'일반', atk:0, hp:1, tribe:'기계', revive:true, deathProto:true},   // 환생 / 죽음의 메아리: 하수인 뽑기, 손패 하수인 전체 +1/+1
+  {type:'minion', name:"부상당한 해골 전사", cost:1, rarity:'전설', atk:2, hp:4, tribe:'언데드', effect:{type:'selfHurt', value:3}},   // 등장: 내 영웅에게 피해 3
+  {type:'minion', name:"부정한 알", cost:1, rarity:'일반', atk:0, hp:2, tribe:'언데드', eggChicken:true},   // 유언: 3/3 언데드 닭 소환 / 내 턴이 끝날 때마다 그 닭 +1/+1
+  {type:'minion', name:"불안정한 프로토타입", cost:1, rarity:'일반', atk:0, hp:1, tribe:'기계', revive:true, deathProto:true},   // 환생 / 유언: 하수인 뽑기, 손패 하수인 전체 +1/+1
   {type:'minion', name:"검 제작의 대가", cost:2, rarity:'일반', atk:1, hp:3, endSword:true},   // 내 턴이 끝날 때 다른 무작위 아군 하수인 둘의 공격력 +1
-  {type:'minion', name:"공작 켈레세스", cost:2, rarity:'전설', atk:2, hp:2, tribe:'언데드', effect:{type:'deckBuff', value:1}},   // 전투의 함성: 내 덱의 모든 하수인 +1/+1
+  {type:'minion', name:"핏빛 공작", cost:2, rarity:'전설', atk:2, hp:2, tribe:'언데드', effect:{type:'deckBuff', value:1}},   // 등장: 내 덱의 모든 하수인 +1/+1
   // ---- 추가 카드 ----
-  {type:'minion', name:"곰팡이술사", cost:4, rarity:'희귀', atk:2, hp:2, effect:{type:'adjBuffCry', value:2}, deathAdjBuff:2},   // 전투의 함성·죽음의 메아리: 양옆 하수인 +2/+2
-  {type:'minion', name:"깔깔대는 발명가", cost:5, rarity:'희귀', atk:2, hp:1, effect:{type:'machinesCry', count:2}},   // 전투의 함성: 도발·보호막 1/2 기계 둘 소환
-  {type:'minion', name:"기사대장", cost:5, rarity:'특급', atk:3, hp:3, rush:true, crowley:3, effect:{type:'damage', value:3}},   // 속공 / 공격으로 적 하수인을 처치하면 +3/+3 / 전투의 함성: 피해 3
-  {type:'minion', name:"누더기골렘", cost:5, rarity:'특급', atk:4, hp:4, tribe:'언데드', taunt:true, revive:true, deathAoe:2},   // 도발, 환생 / 죽음의 메아리: 모든 캐릭터에게 피해 2
-  {type:'minion', name:"공격대장", cost:3, rarity:'희귀', atk:2, hp:3, atkAura:1, effect:{type:'spiritsCry', count:2, atk:1, hp:1, aura:1}},   // 내 다른 하수인 공격력 +1 / 전투의 함성: 1/1 나무정령 둘
-  {type:'minion', name:"공중급수체", cost:3, rarity:'희귀', atk:2, hp:2, deathSummon:1, effect:{type:'spiritsCry', count:1, atk:2, hp:2, death:true}},   // 전투의 함성·죽음의 메아리: 2/2 나무정령
+  {type:'minion', name:"곰팡이술사", cost:4, rarity:'희귀', atk:2, hp:2, effect:{type:'adjBuffCry', value:2}, deathAdjBuff:2},   // 등장·유언: 양옆 하수인 +2/+2
+  {type:'minion', name:"깔깔대는 발명가", cost:5, rarity:'희귀', atk:2, hp:1, effect:{type:'machinesCry', count:2}},   // 등장: 도발·보호막 1/2 기계 둘 소환
+  {type:'minion', name:"기사대장", cost:5, rarity:'특급', atk:3, hp:3, rush:true, crowley:3, effect:{type:'damage', value:3}},   // 속공 / 공격으로 적 하수인을 처치하면 +3/+3 / 등장: 피해 3
+  {type:'minion', name:"누더기골렘", cost:5, rarity:'특급', atk:4, hp:4, tribe:'언데드', taunt:true, revive:true, deathAoe:2},   // 도발, 환생 / 유언: 모든 캐릭터에게 피해 2
+  {type:'minion', name:"공격대장", cost:3, rarity:'희귀', atk:2, hp:3, atkAura:1, effect:{type:'spiritsCry', count:2, atk:1, hp:1, aura:1}},   // 내 다른 하수인 공격력 +1 / 등장: 1/1 나무정령 둘
+  {type:'minion', name:"공중급수체", cost:3, rarity:'희귀', atk:2, hp:2, deathSummon:1, effect:{type:'spiritsCry', count:1, atk:2, hp:2, death:true}},   // 등장·유언: 2/2 나무정령
   {type:'minion', name:"나무정령", cost:1, rarity:'일반', atk:2, hp:2},   // 토큰 (일반 하수인)
   {type:'minion', name:"지하군주", cost:3, rarity:'희귀', atk:1, hp:6, tribe:'언데드', taunt:true, lordGrow:1},   // 도발 / 내 하수인이 소환된 후 생명력 +1
   {type:'minion', name:"마력 깃든 까마귀", cost:1, rarity:'일반', atk:2, hp:2, tribe:'야수'},   // 일반 하수인
-  {type:'minion', name:"부화장 도우미", cost:3, rarity:'일반', atk:2, hp:3, effect:{type:'hatchCry', value:1, max:2}},   // 전투의 함성: 공격력 2 이하 내 다른 하수인 +1/+1, 도발
-  {type:'minion', name:"비명익룡 알", cost:3, rarity:'희귀', atk:0, hp:2, deathPtero:4, pteroEgg:3},   // 죽음의 메아리: 2/1 새끼 넷 / 내 턴이 3번 끝나면 알이 깨져 내 전장을 4/4 익룡으로 채움
-  {type:'minion', name:"엘룬의 예언자", cost:3, rarity:'일반', atk:2, hp:4, copyLow:2},   // 비용 2 이하 하수인을 손에서 낸 후, 그 하수인을 복사해 소환
-  {type:'minion', name:"오늘의 월척", cost:1, rarity:'희귀', atk:3, hp:3, tribe:'야수', rush:true, fishHeal:true, effect:{type:'wormCry'}},   // 속공 / 전투의 함성: 상대에게 2/1 지렁이 / 공격으로 하수인 처치 시 생명력 전부 회복
-  {type:'minion', name:"브롤 베어맨틀", cost:5, rarity:'전설', atk:3, hp:5, onSpellBeast:3},   // 내가 주문을 시전한 후, 비용 3 이하 야수 소환
-  {type:'minion', name:"그물거미", cost:1, rarity:'일반', atk:1, hp:1, tribe:'야수', deathBeast:true},   // 죽음의 메아리: 무작위 야수를 얻음
-  {type:'minion', name:"여명회 파수병", cost:2, rarity:'일반', atk:3, hp:2, effect:{type:'shieldCry'}},   // 전투의 함성: 아군 하수인에게 보호막
-  {type:'spell', name:"채광 사상자", cost:2, rarity:'일반', effect:{type:'summon', count:2, atk:1, hp:1, token:'은빛 성기사단 신병', rush:false, extra:{deathGhoul:1}, text:"'죽음의 메아리: 1/1 취약한 구울을 소환함' 능력이 있는 1/1 은빛 성기사단 신병을 둘 소환합니다"}},   // 죽으면 1/1 구울을 남기는 신병 둘
+  {type:'minion', name:"부화장 도우미", cost:3, rarity:'일반', atk:2, hp:3, effect:{type:'hatchCry', value:1, max:2}},   // 등장: 공격력 2 이하 내 다른 하수인 +1/+1, 도발
+  {type:'minion', name:"비명익룡 알", cost:3, rarity:'희귀', atk:0, hp:2, deathPtero:4, pteroEgg:3},   // 유언: 2/1 새끼 넷 / 내 턴이 3번 끝나면 알이 깨져 내 전장을 4/4 익룡으로 채움
+  {type:'minion', name:"달빛 예언자", cost:3, rarity:'일반', atk:2, hp:4, copyLow:2},   // 비용 2 이하 하수인을 손에서 낸 후, 그 하수인을 복사해 소환
+  {type:'minion', name:"오늘의 월척", cost:1, rarity:'희귀', atk:3, hp:3, tribe:'야수', rush:true, fishHeal:true, effect:{type:'wormCry'}},   // 속공 / 등장: 상대에게 2/1 지렁이 / 공격으로 하수인 처치 시 생명력 전부 회복
+  {type:'minion', name:"곰 조련사", cost:5, rarity:'전설', atk:3, hp:5, onSpellBeast:3},   // 내가 주문을 시전한 후, 비용 3 이하 야수 소환
+  {type:'minion', name:"그물거미", cost:1, rarity:'일반', atk:1, hp:1, tribe:'야수', deathBeast:true},   // 유언: 무작위 야수를 얻음
+  {type:'minion', name:"여명회 파수병", cost:2, rarity:'일반', atk:3, hp:2, effect:{type:'shieldCry'}},   // 등장: 아군 하수인에게 보호막
+  {type:'spell', name:"채광 사상자", cost:2, rarity:'일반', effect:{type:'summon', count:2, atk:1, hp:1, token:'견습 기사단 신병', rush:false, extra:{deathGhoul:1}, text:"'유언: 1/1 취약한 구울을 소환함' 능력이 있는 1/1 견습 기사단 신병을 둘 소환합니다"}},   // 죽으면 1/1 구울을 남기는 신병 둘
   {type:'spell', name:"평등", cost:2, rarity:'일반', school:['신성'], effect:{type:'equality'}},   // 모든 하수인의 생명력을 1로
-  {type:'minion', name:"대사제 데칼", cost:3, rarity:'전설', atk:3, hp:4, effect:{type:'decalCry'}},   // 전투의 함성: 내 영웅 생명력 1, 감소한 만큼 방어도
-  {type:'spell', name:"병력 소집", cost:3, rarity:'일반', effect:{type:'summon', count:4, atk:1, hp:1, token:'은빛 성기사단 신병', rush:false, text:"1/1 은빛 성기사단 신병을 4명 소환합니다"}},
+  {type:'minion', name:"희생의 대사제", cost:3, rarity:'전설', atk:3, hp:4, effect:{type:'decalCry'}},   // 등장: 내 영웅 생명력 1, 감소한 만큼 방어도
+  {type:'spell', name:"병력 소집", cost:3, rarity:'일반', effect:{type:'summon', count:4, atk:1, hp:1, token:'견습 기사단 신병', rush:false, text:"1/1 견습 기사단 신병을 4명 소환합니다"}},
   {type:'spell', name:"신의 은총", cost:3, rarity:'일반', school:['신성'], effect:{type:'divineFavor'}},   // 상대 손패 수와 같아질 때까지 뽑기
-  {type:'minion', name:"거품로봇", cost:4, rarity:'일반', atk:4, hp:4, tribe:'기계', effect:{type:'bubbleCry'}},   // 전투의 함성: 내 다른 기계에게 보호막·도발
+  {type:'minion', name:"거품로봇", cost:4, rarity:'일반', atk:4, hp:4, tribe:'기계', effect:{type:'bubbleCry'}},   // 등장: 내 다른 기계에게 보호막·도발
   {type:'minion', name:"창심장 파수병", cost:4, rarity:'희귀', atk:3, hp:4, tribe:'용족', endSpellGain:{school:'신성', discount:3}},   // 내 턴이 끝날 때 무작위 신성 주문 (비용 -3)
   {type:'minion', name:"부두 토템", cost:2, rarity:'일반', atk:0, hp:4, tribe:'토템', endSpellGain:{school:'암흑', discount:0}},   // 내 턴이 끝날 때 무작위 암흑 주문
-  {type:'minion', name:"거대한 토템 아이스오르", cost:3, rarity:'전설', atk:0, hp:4, tribe:'토템', endTotemBuff:1},   // 내 턴이 끝날 때 손·덱·전장의 다른 토템 +1/+1
+  {type:'minion', name:"거대한 토템 수호자", cost:3, rarity:'전설', atk:0, hp:4, tribe:'토템', endTotemBuff:1},   // 내 턴이 끝날 때 손·덱·전장의 다른 토템 +1/+1
   {type:'minion', name:"불꽃의 토템", cost:2, rarity:'일반', atk:0, hp:3, tribe:'토템', adjAtkAura:2},   // 양옆 하수인 공격력 +2
   {type:'minion', name:"물 공급 토템", cost:2, rarity:'일반', atk:0, hp:3, tribe:'토템', endAdjBuff:1},   // 내 턴이 끝날 때 양옆 하수인 +1/+1
   // ---- v113 ----
   {type:'minion', name:"스테레오 토템", cost:2, rarity:'일반', atk:0, hp:3, tribe:'토템', endHandBuff:2},   // 내 턴이 끝날 때 내 손의 무작위 하수인 +2/+2
   {type:'minion', name:"죄악석 토템", cost:1, rarity:'일반', atk:0, hp:3, tribe:'토템', endSelfHp:1},   // 내 턴이 끝날 때 생명력 +1
   {type:'minion', name:"토템 골렘", cost:2, rarity:'일반', atk:3, hp:4, tribe:'토템', overload:1},   // 과부하 (1)
-  {type:'minion', name:"돌장인", cost:4, rarity:'일반', atk:5, hp:4, effect:{type:'stoneCry', value:2}},   // 전투의 함성: 이번 게임 동안 내 토템 공격력 +2
-  {type:'minion', name:"칼바람 폭풍소환사", cost:5, rarity:'희귀', atk:5, hp:5, effect:{type:'stormCry', need:4}},   // 전투의 함성: 내 전장에 토템 4기 이상이면 알아키르 소환
-  {type:'minion', name:"바람의 군주 알아키르", cost:8, rarity:'전설', atk:3, hp:6, tribe:'정령', windfury:true, charge:true, taunt:true, shield:true},   // 질풍, 돌진, 도발, 천상의 보호막
+  {type:'minion', name:"돌장인", cost:4, rarity:'일반', atk:5, hp:4, effect:{type:'stoneCry', value:2}},   // 등장: 이번 게임 동안 내 토템 공격력 +2
+  {type:'minion', name:"칼바람 폭풍소환사", cost:5, rarity:'희귀', atk:5, hp:5, effect:{type:'stormCry', need:4}},   // 등장: 내 전장에 토템 4기 이상이면 폭풍의 정령왕 소환
+  {type:'minion', name:"폭풍의 정령왕", cost:8, rarity:'전설', atk:3, hp:6, tribe:'정령', windfury:true, charge:true, taunt:true, shield:true},   // 질풍, 돌진, 도발, 보호막
 
   // ======== v117 영남대 모험 · 0단계 「수능」 보스 전용 카드 (scope:'boss' → 유저는 얻을 수 없음) ========
   //  art: 카드 그림 경로 / flavor: 설명(분위기 글, 아직 화면에는 안 나옴)
@@ -393,16 +393,16 @@ const CARD_POOL = [
     desc:'지속 효과: 이 하수인이 전장에 있는 동안, 내 전장의 모든 아군 하수인이 적이 거는 상태이상(빙결·기절·혼란·침묵·소심함·겁먹음·공격 불가 등)에 면역이 됩니다. 교수님 자신도 보호받으며, 교수님이 죽으면 효과가 사라집니다.'},
   {type:'minion', name:"PPT의 신 & 발표 장인", cost:3, rarity:'희귀', tribe:'2학년', atk:2, hp:5, effect:{type:'pptCry', value:2}, scope:'adventure', art:'images/ynu/ynu_r2_ppt.jpg',
     quote:'"템플릿은 제가 만들어왔으니, 질문은 발표자인 저에게 해주세요."', flavor:'조별 과제 A+의 8할은 이 사람의 슬라이드 전환 효과였다.',
-    desc:'전투의 함성: 양옆에 있는 아군 하수인에게 공격력 +2와 도발을 부여합니다. 적 하수인이 있으면 하나를 골라, 화려한 언변으로 이번 턴 동안 소심함(공격력 1) 상태로 만듭니다. 내 턴이 끝나면 그 하수인의 공격력은 원래대로 돌아옵니다.'},
+    desc:'등장: 양옆에 있는 아군 하수인에게 공격력 +2와 도발을 부여합니다. 적 하수인이 있으면 하나를 골라, 화려한 언변으로 이번 턴 동안 소심함(공격력 1) 상태로 만듭니다. 내 턴이 끝나면 그 하수인의 공격력은 원래대로 돌아옵니다.'},
   {type:'minion', name:"캠퍼스 명예 총장 길고양이", cost:1, rarity:'희귀', tribe:'2학년', atk:1, hp:3, endRandHp:2, scope:'adventure', art:'images/ynu/ynu_r2_cat.jpg',
     flavor:'인문관 앞 왕좌의 주인. 마나 통조림 배급은 총장님의 고유 권한이다.',
     desc:'내 턴이 끝날 때마다, 무작위 아군 하수인(자신 포함) 하나의 생명력을 2 증가시킵니다. (최대 생명력도 함께 늘어납니다)'},
   {type:'minion', name:"단골 술집 욕쟁이 이모님", cost:3, rarity:'희귀', tribe:'2학년', atk:4, hp:4, effect:{type:'eggrollCry', value:2}, scope:'adventure', art:'images/ynu/ynu_r2_auntie.jpg',
     flavor:'욕은 한 바가지, 계란말이는 두 접시. 학생증만 보여주면 서비스가 나온다.',
-    desc:'전투의 함성: 내 손으로 0코스트 주문 「서비스 계란말이」(하수인 하나에게 생명력 +3 부여) 2장을 가져옵니다.'},
+    desc:'등장: 내 손으로 0코스트 주문 「서비스 계란말이」(하수인 하나에게 생명력 +3 부여) 2장을 가져옵니다.'},
   {type:'minion', name:"과방 붙박이 만물상", cost:2, rarity:'희귀', tribe:'2학년', atk:2, hp:4, effect:{type:'gadgetCry'}, deathGadget:true, scope:'adventure', art:'images/ynu/ynu_r2_gadget.jpg',
     quote:'"어? 너 배터리 없냐? 내 보조배터리 써라."', flavor:'과방 소파와 한 몸이 된 지 3년째. 가방에서 없는 게 없다.',
-    desc:'전투의 함성 & 죽음의 메아리: 무작위 응원 주문(1코스트) 1장을 내 손으로 가져옵니다.\n응원 주문 9종: 타이레놀 한 알 · 에어팟 노이즈 캔슬링 · 비타민C 한 포 · 메가커피 1L 아메리카노 · 포스트잇 응원 쪽지 · 보조배터리 대여 · A4 한 장 요약본 · 편의점 1+1 쿠폰 · 선배 찬스'},
+    desc:'등장 & 유언: 무작위 응원 주문(1코스트) 1장을 내 손으로 가져옵니다.\n응원 주문 9종: 타이레놀 한 알 · 에어팟 노이즈 캔슬링 · 비타민C 한 포 · 메가커피 1L 아메리카노 · 포스트잇 응원 쪽지 · 보조배터리 대여 · A4 한 장 요약본 · 편의점 1+1 쿠폰 · 선배 찬스'},
   {type:'minion', name:"의욕 넘치는 전역 복학생", cost:7, rarity:'특급', tribe:'2학년', atk:7, hp:9, rush:true, vetArmor:true, scope:'adventure', art:'images/ynu/ynu_r2_veteran.jpg',
     quote:'"사회 나오니까 공기부터 다르지 말입니다! 제가 다 치우겠습니다!"', flavor:'전역 3일 차. 아직 경례가 먼저 나간다.',
     desc:'속공. 이 하수인이 적 하수인을 공격해 처치하면, 남은 공격력(이 하수인의 공격력 − 적의 남은 생명력)만큼 내 영웅이 방어도를 얻습니다. 예) 공격력 7로 생명력 3인 적을 처치하면 방어도 +4.'},
@@ -411,7 +411,7 @@ const CARD_POOL = [
     desc:'아군 하수인 하나를 이번 턴 동안 휴식(공격 불가) 상태로 만드는 대신, 그 하수인의 생명력을 완전히 회복합니다. 그리고 내 영웅이 방어도 +3을 얻습니다.'},
   {type:'minion', name:"연구실의 군주 지도교수", cost:8, rarity:'전설', tribe:'2학년', atk:7, hp:7, effect:{type:'advisorCry'}, scope:'adventure', art:'images/ynu/ynu_r2_advisor.jpg',
     quote:'"자네, 대학원 생각 없나? 인건비는… 열정으로 대신하지."', flavor:'서명 한 번이면 학부생이 석박통합 과정생이 된다. 졸업은 교수님 마음.',
-    desc:'전투의 함성: 적 하수인 하나를 내 편으로 데려와 「석박통합 연구원」으로 만듭니다. 데려온 하수인은 공격력·생명력은 그대로, 원래 능력은 모두 사라지며, 내 턴이 끝날 때마다 내 영웅의 생명력을 3 회복하고 무작위 주문 카드 1장을 내 손으로 가져옵니다. (내 전장에 자리가 있어야 데려올 수 있습니다)'},
+    desc:'등장: 적 하수인 하나를 내 편으로 데려와 「석박통합 연구원」으로 만듭니다. 데려온 하수인은 공격력·생명력은 그대로, 원래 능력은 모두 사라지며, 내 턴이 끝날 때마다 내 영웅의 생명력을 3 회복하고 무작위 주문 카드 1장을 내 손으로 가져옵니다. (내 전장에 자리가 있어야 데려올 수 있습니다)'},
   {type:'spell', name:"수강신청 서버 대폭발", cost:9, rarity:'전설', school:['2학년'], effect:{type:'serverCrash'}, scope:'adventure', art:'images/ynu/ynu_r2_server.jpg',
     flavor:'오전 10시 정각. 새로고침 한 번에 온 캠퍼스가 멈춰 섰다.',
     desc:'다음 내 턴까지 모든 적 하수인과 적 영웅을 「대기열 48,290번」(빙결·행동 불가) 상태로 만듭니다. 그리고 내 손으로 비용 0인 「올클리어」(카드를 2장 뽑고 마나 수정 2개를 즉시 회복) 주문 1장을 가져옵니다.'},
@@ -427,7 +427,7 @@ const CARD_POOL = [
     desc:'모든 적 하수인에게 [내부분열]을 부여합니다.\n내부분열: 이 하수인이 공격할 때, 원래 대상 대신 무작위 아군 하수인을 공격합니다. (다른 아군이 없으면 원래 대상을 공격)'},
   {type:'minion', name:"SNS 속 동기들의 합격 수기", cost:6, rarity:'특급', atk:5, hp:5, tribe:'3학년 / 기계', effect:{type:'snsEnvy', value:2}, scope:'boss', art:'images/ynu/ynu_3_sns.jpg',
     flavor:'"\'네카라쿠배 합격 후기 공유합니다!\' 피드를 스크롤할 때마다 내 영혼의 방어도가 깎여나간다."',
-    desc:'전투의 함성: 상대 손에 있는 모든 주문 카드의 비용을 (2) 증가시키고, 상대 영웅의 방어도를 모두 제거합니다.'},
+    desc:'등장: 상대 손에 있는 모든 주문 카드의 비용을 (2) 증가시키고, 상대 영웅의 방어도를 모두 제거합니다.'},
   {type:'minion', name:"쇼츠 알고리즘", cost:3, rarity:'희귀', atk:1, hp:5, tribe:'3학년 / 악마', shortsCurse:true, scope:'boss', art:'images/ynu/ynu_3_shorts.jpg',
     flavor:'"딱 하나만 보고 자야지... 어? 벌써 해가 뜨네?"',
     desc:'상대편 턴이 시작될 때마다, 상대는 강제로 「3초만 더 보기」를 시전합니다.\n3초만 더 보기: 30% 확률로 아무 행동도 못 하고 그 턴을 넘깁니다. (카드는 평소대로 뽑습니다)'},
@@ -436,7 +436,7 @@ const CARD_POOL = [
     desc:'이 하수인이 전장에 있는 동안, 양쪽 모두의 모든 주문은 주문 공격력 +3을 얻지만 비용이 (1) 증가합니다. (동전 제외)'},
   {type:'minion', name:"기사 자격증 시험", cost:5, rarity:'특급', atk:4, hp:6, tribe:'3학년', licenseEnd:true, scope:'boss', art:'images/ynu/ynu_3_license.jpg',
     flavor:'"1회독 완료 시 합격, 미완료 시 멘탈 폭파."',
-    desc:'내 턴이 끝날 때마다, 상대 전장에 0/3 「두꺼운 수험서」를 소환합니다.\n두꺼운 수험서: 죽음의 메아리: 그 주인(상대) 영웅에게 피해를 4 줍니다.'},
+    desc:'내 턴이 끝날 때마다, 상대 전장에 0/3 「두꺼운 수험서」를 소환합니다.\n두꺼운 수험서: 유언: 그 주인(상대) 영웅에게 피해를 4 줍니다.'},
   // ---- 3학년 파생 카드 (중간고사·쇼츠·자격증 시험이 만든다. 덱에는 안 넣음) ----
   {type:'minion', name:"스트레스성 폭식", cost:0, rarity:'일반', atk:0, hp:1, tribe:'3학년', bingeEnd:true, scope:'boss', art:'images/ynu/ynu_3_binge.jpg',
     flavor:'"시험 끝나면 다이어트 할 거야. 일단 치킨 한 마리만."',
@@ -457,7 +457,7 @@ const CARD_POOL = [
     flavor:'이마에 박힌 경고장. 남은 시간 동안 갱생하든가, 짐을 싸든가.',
     desc:'적 하수인 하나에게 경고장을 부착합니다. 그 하수인 주인의 턴이 3번 끝나면 그 하수인은 처치됩니다.'},
   {type:'minion', name:"두꺼운 수험서", cost:1, rarity:'일반', atk:0, hp:3, tribe:'3학년', deathSelfFace:4, scope:'boss', art:'images/ynu/ynu_3_thick_book.jpg',
-    flavor:'1회독도 못 했는데 벌써 모의고사.', desc:'죽음의 메아리: 이 하수인 주인의 영웅에게 피해를 4 줍니다. (치우면 아프다)'},
+    flavor:'1회독도 못 했는데 벌써 모의고사.', desc:'유언: 이 하수인 주인의 영웅에게 피해를 4 줍니다. (치우면 아프다)'},
   {type:'spell', name:"3초만 더 보기", cost:0, rarity:'일반', school:['3학년'], effect:{type:'shortsPeek', value:30}, scope:'boss', art:'images/ynu/ynu_3_shorts.jpg',
     flavor:'"딱 하나만 더…"', desc:'30% 확률로 아무 행동도 못 하고 이번 턴을 넘깁니다. (쇼츠 알고리즘이 상대 턴 시작에 강제로 시전)'},
   // ======== v121 영남대 모험 · 3학년 클리어 보상 카드 10장 (scope:'adventure') ========
@@ -472,7 +472,7 @@ const CARD_POOL = [
     desc:'다음 내 턴이 시작될 때까지 내 영웅이 [면역] 상태가 되어 어떤 피해도 받지 않습니다. 그리고 내 영웅의 생명력을 4 회복합니다.'},
   {type:'minion', name:"교환학생의 꿈", cost:2, rarity:'일반', atk:2, hp:4, tribe:'3학년 / 해적 / 멀록', effect:{type:'exchangeCry'}, scope:'adventure', art:'images/ynu/ynu_r3_exchange.jpg',
     flavor:'"달라란으로 떠난 그는 언어가 통하지 않아 \'아옳옳옳\'으로 모든 과제를 해결했다."',
-    desc:'전투의 함성: 상대방 덱의 맨 위 카드(다음에 뽑을 카드)와 내 덱의 맨 위 카드를 서로 바꿉니다.'},
+    desc:'등장: 상대방 덱의 맨 위 카드(다음에 뽑을 카드)와 내 덱의 맨 위 카드를 서로 바꿉니다.'},
   {type:'spell', name:"공모전 나가기", cost:5, rarity:'특급', school:['3학년'], effect:{type:'hackathon'}, scope:'adventure', art:'images/ynu/ynu_r3_hackathon.jpg',
     flavor:'"상금 500만 골드 or 발표 3분 전 블루스크린. 중간은 없다."',
     desc:'내 전장에 1/1 「밤샘 개발자」(기계) 4마리를 소환합니다. 각 하수인은 무작위 좋은 효과 1개와 나쁜 효과 1개를 얻습니다.\n좋은 효과: 도발 · 보호막 · 공격력 +2 · 생명력 +2 · 돌진 · 생명력 흡수 · 독성 · 질풍\n나쁜 효과: 빙결 · 번아웃 · 내부분열 · 경고장(3턴) · 기절'},
@@ -484,13 +484,13 @@ const CARD_POOL = [
     desc:'카드를 3장 뽑습니다. 이번 턴에 뽑은 카드들의 비용이 (1) 감소합니다.'},
   {type:'spell', name:"판 엎기: 자퇴서 제출", cost:9, rarity:'전설', school:['3학년'], effect:{type:'dropOut'}, scope:'adventure', art:'images/ynu/ynu_r3_dropout.jpg',
     flavor:'"안 해! 다 때려치우고 기술이나 배울 거야!"',
-    desc:'전장의 모든 하수인을 게임에서 영구히 제거합니다 (죽음의 메아리 없음). 양쪽 플레이어는 손에 있는 모든 카드를 버립니다.'},
+    desc:'전장의 모든 하수인을 게임에서 영구히 제거합니다 (유언 없음). 양쪽 플레이어는 손에 있는 모든 카드를 버립니다.'},
   {type:'minion', name:"자취방의 거대 쓰레기 산", cost:8, rarity:'특급', tribe:'3학년', atk:8, hp:10, taunt:true, trashAura:2, scope:'adventure', art:'images/ynu/ynu_r3_trash.jpg',
     flavor:'배달 음식 용기와 분리수거 안 된 캔들이 자아를 형성하기 시작했다.',
     desc:'도발. 매 턴이 끝날 때마다(내 턴·상대 턴 모두) 극심한 악취로 전장의 다른 모든 캐릭터(양쪽 영웅·다른 모든 하수인)에게 피해를 2 줍니다.'},
   {type:'spell', name:"전과 / 편입 엑소더스", cost:8, rarity:'전설', school:['3학년'], effect:{type:'exodus'}, scope:'adventure', art:'images/ynu/ynu_r3_exodus.jpg',
     flavor:'이 학과엔 미래가 없다. 탈출만이 살길이다.',
-    desc:'내 전장의 모든 하수인을 파괴합니다 (죽음의 메아리 발동). 파괴된 하수인 하나당 무작위 8코스트 하수인을 하나씩 소환합니다.'},
+    desc:'내 전장의 모든 하수인을 파괴합니다 (유언 발동). 파괴된 하수인 하나당 무작위 8코스트 하수인을 하나씩 소환합니다.'},
   // ======== v123 영남대 모험 · 4학년(마지막) 보스 전용 카드 (scope:'boss') — 앞면은 짧게, 자세한 설명은 desc ========
   {type:'minion', name:"졸업 유예자 멍서스", cost:3, rarity:'전설', atk:0, hp:9, tribe:'4학년', stealth:true, deferGrad:5, scope:'boss', art:'images/ynu/ynu_4_mungsus.jpg',
     flavor:'"사회로 나가면 절벽이지만... 학교에 남아있으면 적어도 \'학생\' 신분은 유지되잖아...?"',
@@ -506,21 +506,21 @@ const CARD_POOL = [
     desc:'내 전장에 다른 하수인이 없는 동안 도발과 보호막을 얻고, 내 턴이 끝날 때마다 생명력을 2 회복합니다. 또한 내 턴이 끝날 때 자신에게 [비만](생명력 2배, 공격력 절반)을 부여합니다. (비만은 한 번만)'},
   {type:'minion', name:"노련한 4학년 조장", cost:4, rarity:'일반', atk:3, hp:5, tribe:'4학년 / 오크', effect:{type:'rushAllyCry'}, scope:'boss', art:'images/ynu/ynu_4_leader.jpg',
     flavor:'"자, 1학년 넌 자료조사, 2학년 넌 PPT. 발표는 내가 총대 맨다. 오늘 6시까지 제출 끝."',
-    desc:'전투의 함성: 다른 모든 아군 하수인에게 속공을 부여합니다. 조별과제는 이미 끝났습니다.'},
+    desc:'등장: 다른 모든 아군 하수인에게 속공을 부여합니다. 조별과제는 이미 끝났습니다.'},
   {type:'spell', name:"교수님의 관용", cost:1, rarity:'희귀', school:['4학년'], effect:{type:'mercyNext', value:2}, scope:'boss', art:'images/ynu/ynu_4_tolerance.jpg',
     flavor:'"자네 면접이 겹쳤다고? 허허, 취업계 서류만 제출하고 얼른 다녀오게나."',
     desc:'이번 턴에 내가 내는 다음 주문의 비용이 (2) 감소합니다. 4학년 전용 \'취업계\' 도장이 찍혀 있습니다.'},
   {type:'minion', name:"캡스톤 걸작 메카", cost:6, rarity:'희귀', atk:6, hp:6, tribe:'4학년 / 기계', taunt:true, deathCards:['특허 출원된 조수 메카', '특허 출원된 조수 메카'], scope:'boss', art:'images/ynu/ynu_4_capstone.jpg',
     flavor:'"밤샘 코딩과 땜납 냄새로 일궈낸 캡스톤 디자인 종합 A+의 결정체!"',
-    desc:'도발. 죽음의 메아리: 3/3 「특허 출원된 조수 메카」 둘을 소환합니다.\n특허 출원된 조수 메카: 죽음의 메아리: 1/1 「소형 기계」 둘을 소환합니다.'},
+    desc:'도발. 유언: 3/3 「특허 출원된 조수 메카」 둘을 소환합니다.\n특허 출원된 조수 메카: 유언: 1/1 「소형 기계」 둘을 소환합니다.'},
   {type:'minion', name:"특허 출원된 조수 메카", cost:3, rarity:'일반', atk:3, hp:3, tribe:'4학년 / 기계', deathCards:['소형 기계', '소형 기계'], scope:'boss', art:'images/ynu/ynu_4_assistant_mech.jpg',
-    flavor:'특허 번호 제 4-2026호. 커피 내리기 전용.', desc:'죽음의 메아리: 1/1 「소형 기계」 둘을 소환합니다. (캡스톤 걸작 메카가 남김)'},
+    flavor:'특허 번호 제 4-2026호. 커피 내리기 전용.', desc:'유언: 1/1 「소형 기계」 둘을 소환합니다. (캡스톤 걸작 메카가 남김)'},
   {type:'minion', name:"소형 기계", cost:1, rarity:'일반', atk:1, hp:1, tribe:'4학년 / 기계', scope:'boss', art:'images/ynu/ynu_4_small_machine.jpg', flavor:'나사 하나가 남았는데… 어디 거지?'},
   {type:'minion', name:"무한동력 논문 발표!", cost:4, rarity:'희귀', atk:5, hp:1, tribe:'4학년', rush:true, deathCards:['아직 작동중!'], scope:'boss', art:'images/ynu/ynu_4_perpetual_motion.jpg',
     flavor:'"이 장치는 영원히 움직입니다! …아마도요."',
-    desc:'속공. 죽음의 메아리: 도발 1/5 「아직 작동중!」을 소환합니다.\n아직 작동중!: 죽음의 메아리: 속공 5/1 「무한동력 논문 발표!」를 소환합니다. (서로를 끝없이 소환)'},
+    desc:'속공. 유언: 도발 1/5 「아직 작동중!」을 소환합니다.\n아직 작동중!: 유언: 속공 5/1 「무한동력 논문 발표!」를 소환합니다. (서로를 끝없이 소환)'},
   {type:'minion', name:"아직 작동중!", cost:2, rarity:'일반', atk:1, hp:5, tribe:'4학년 / 기계', taunt:true, deathCards:['무한동력 논문 발표!'], scope:'boss', art:'images/ynu/ynu_4_still_working.jpg',
-    flavor:'"보세요, 아직 돌아가잖아요!"', desc:'도발. 죽음의 메아리: 속공 5/1 「무한동력 논문 발표!」를 소환합니다.'},
+    flavor:'"보세요, 아직 돌아가잖아요!"', desc:'도발. 유언: 속공 5/1 「무한동력 논문 발표!」를 소환합니다.'},
   {type:'spell', name:"서류 전형 합격!", cost:1, rarity:'희귀', school:['4학년'], effect:{type:'docPass', value:2, draw:2}, scope:'boss', art:'images/ynu/ynu_4_docpass.jpg',
     flavor:'"합격 통보 메일을 확인한 순간, 도파민 수치가 한계치를 돌파했습니다."',
     desc:'상대가 다음 턴을 끝낼 때, 마나 수정 2개를 얻고 카드 2장을 뽑습니다. 이 마나 수정은 동전처럼 최대치 10을 넘을 수 있습니다.'},
@@ -529,7 +529,7 @@ const CARD_POOL = [
     desc:'내 영웅이 방어도 8을 얻습니다. 이번 턴 동안 내 전장의 모든 아군 하수인이 공격력 +3과 [면역](피해를 받지 않음)을 얻습니다.'},
   {type:'minion', name:"마지막 벚꽃길", cost:2, rarity:'희귀', atk:0, hp:3, tribe:'4학년 / 장소', cantAttack:true, endDecay:1, locBlossom:true, scope:'boss', art:'images/ynu/ynu_4_blossom.jpg',
     flavor:'"매년 피던 벚꽃인데, 4학년 봄에 동기들과 걷는 이 길은 왜 이리 뭉클할까요."',
-    desc:'장소 · 내구도 3. 공격할 수 없습니다. 내 턴이 끝날 때마다 자동으로 발동해, 무작위 아군 하수인 둘에게 +1/+1과 "죽음의 메아리: 내 영웅의 생명력을 3 회복"을 부여하고, 6/6 「4학년」을 소환합니다. 발동할 때마다 내구도가 1 줄어듭니다.'},
+    desc:'장소 · 내구도 3. 공격할 수 없습니다. 내 턴이 끝날 때마다 자동으로 발동해, 무작위 아군 하수인 둘에게 +1/+1과 "유언: 내 영웅의 생명력을 3 회복"을 부여하고, 6/6 「4학년」을 소환합니다. 발동할 때마다 내구도가 1 줄어듭니다.'},
   {type:'minion', name:"4학년", cost:6, rarity:'일반', atk:6, hp:6, tribe:'4학년', scope:'boss', art:'images/ynu/ynu_4_senior.jpg',
     flavor:'"뛰지들 말게. 강의는 도망가지 않아."', desc:'마지막 벚꽃길이 소환하는 6/6 하수인.'},
   {type:'spell', name:"학사모 던지기", cost:3, rarity:'일반', school:['4학년'], effect:{type:'capToss', value:2}, scope:'boss', art:'images/ynu/ynu_4_captoss.jpg',
@@ -539,10 +539,10 @@ const CARD_POOL = [
     desc:'내 손에 무작위 「축하 음료」 3장을 가져옵니다. 이번 턴에 쓴 마나를 2 회복합니다.\n축하 음료(0코스트): 축하 맥주(이번 턴 마나 +1) · 숙취해소제(내 영웅 생명력 3 회복) · 샴페인 한 잔(아군 하수인 +1/+1)'},
   {type:'minion', name:"캠퍼스의 신선, 판다렌 선배", cost:4, rarity:'전설', atk:4, hp:5, tribe:'4학년 / 판다렌', effect:{type:'manaOne'}, scope:'boss', art:'images/ynu/ynu_4_panda.jpg',
     flavor:'"학점 4.5 만점도, 1점대 학고도 결국은 찰나의 바람 같은 것... 차나 한잔 들게나."',
-    desc:'전투의 함성: 두 영웅의 마나 수정을 1개로 만듭니다. (최대 마나가 1이 되고, 남은 마나도 1 이하로)'},
+    desc:'등장: 두 영웅의 마나 수정을 1개로 만듭니다. (최대 마나가 1이 되고, 남은 마나도 1 이하로)'},
   {type:'minion', name:"어엿한 사회 초년생", cost:5, rarity:'희귀', atk:5, hp:5, tribe:'4학년 / 타우렌', effect:{type:'rookieCry', min:6, value:2}, scope:'boss', art:'images/ynu/ynu_4_rookie.jpg',
     flavor:'"학생증 반납 완료. 이제 진짜 필드로 출근합니다!"',
-    desc:'전투의 함성: 내 손에 비용이 6 이상인 카드가 있다면, +2/+2와 돌진을 얻습니다. (준비된 신입사원의 패기)'},
+    desc:'등장: 내 손에 비용이 6 이상인 카드가 있다면, +2/+2와 돌진을 얻습니다. (준비된 신입사원의 패기)'},
   // ======== v124 학사모 카드 (일반 카드 — 모든 모드에서 사용) ========
   //  학사모는 unlock:'ynu_4' → 상점 팩·스타터·무작위 생성에서 안 나오고, 영남대 4학년 첫 클리어 보상(2장)으로만 컬렉션에 들어온다
   {type:'spell', name:"학사모", cost:0, rarity:'특급', effect:{type:'mortarboard'}, capLv:0, unlock:'ynu_4', art:'images/ynu/ynu_cap_mortarboard.jpg',
@@ -553,10 +553,10 @@ const CARD_POOL = [
     desc:'부속 퀘스트(계속): 마나를 남긴 채로 내 턴을 끝내면 진행됩니다.\n1단계 0/1 → 학사모 획득 → 2단계 0/2 → 학사모 획득 → 3단계 0/3 … 단계를 깰 때마다 비용 0인 학사모를 내 손으로 가져오고, 퀘스트는 게임이 끝날 때까지 계속됩니다.'},
   {type:'minion', name:"수석 졸업생 발굽", cost:4, rarity:'전설', atk:4, hp:4, tribe:'타우렌', effect:{type:'valedictorian', value:1}, art:'images/ynu/ynu_cap_valedictorian.jpg',
     flavor:'"학사모는 던지라고 있는 겁니다. 제가 제일 많이 던졌죠."',
-    desc:'전투의 함성: 이번 게임에서 내가 낸 학사모 1장당 적 영웅에게 피해를 1 줍니다.'},
+    desc:'등장: 이번 게임에서 내가 낸 학사모 1장당 적 영웅에게 피해를 1 줍니다.'},
   {type:'minion', name:"학위수여식의 총장님", cost:8, rarity:'전설', atk:5, hp:5, effect:{type:'capFill'}, art:'images/ynu/ynu_cap_president.jpg',
     flavor:'"졸업생 여러분, 모자를 하늘 높이!"',
-    desc:'전투의 함성: 내 손을 무작위 비용(0~10)의 학사모로 가득 채웁니다.'},
+    desc:'등장: 내 손을 무작위 비용(0~10)의 학사모로 가득 채웁니다.'},
 ];
 
 if (typeof module !== 'undefined') { module.exports = { CARD_POOL }; }

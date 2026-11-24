@@ -66,7 +66,7 @@ const find = (s, seat, id) => s.seats[seat].board.find(x => x.id === id);
   assert.strictEqual(find(s, 0, a.id).hp, 9); assert(!s.seats[0].hand.some(c => c.name === '캠퍼스 잔디밭 돗자리'), '3번 쓰면 사라짐'); }
 // 수강신청 올클: 3장 뽑고 이번 턴 -1
 { let s = setup(); s = play(s, 0, give(s, 0, '수강신청 올클')); assert.strictEqual(s.seats[0].hand.length, 3); assert(s.seats[0].hand.every(c => c.tempDisc || c.cost === 0)); }
-// 판 엎기: 모든 하수인 영구 제거(죽메 없음), 양쪽 손패 버림
+// 판 엎기: 모든 하수인 영구 제거(유언 없음), 양쪽 손패 버림
 { let s = setup(); put(s, 0, card('부정한 알')); put(s, 1, { name: 'e', atk: 1, hp: 1 }); give(s, 1, '들쥐'); give(s, 0, '들쥐');
   s = play(s, 0, give(s, 0, '판 엎기: 자퇴서 제출')); assert.strictEqual(s.seats[0].board.length + s.seats[1].board.length, 0, '닭도 안 나옴');
   assert.strictEqual(s.seats[0].hand.length + s.seats[1].hand.length, 0); }

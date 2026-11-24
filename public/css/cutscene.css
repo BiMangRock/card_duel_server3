@@ -211,7 +211,7 @@
 #cutscene .cs-bigcard b{font-size:clamp(1.8rem, 5vw, 3rem); letter-spacing:.12em; text-shadow:0 0 20px rgba(255,220,120,.7);}
 #cutscene .cs-bigcard span{color:#bbb;}
 
-/* VS 오프닝 (튜토리얼 제이나 VS 가로쉬처럼) */
+/* VS 오프닝 (튜토리얼 엘라 VS 카르바처럼) */
 #cutscene .cs-vs{inset:0; background:rgba(0,0,0,.72); overflow:hidden;}
 #cutscene .cs-vs .side{position:absolute; top:0; bottom:0; width:50%; display:flex; flex-direction:column; align-items:center; justify-content:flex-end; padding-bottom:16vh;}
 #cutscene .cs-vs .side.l{left:0; background:linear-gradient(100deg, rgba(40,90,200,.55), rgba(0,0,0,0)); animation:csInL .5s ease-out;}

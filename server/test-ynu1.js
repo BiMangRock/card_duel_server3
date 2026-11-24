@@ -35,13 +35,13 @@ console.log('✔ 혼란 상태이상');
 // F폭격기 교수님: 다른 모든 하수인 처치 (보호막 무시)
 { let s = setup(); put(s, 0, bear); put(s, 1, bear, { shield: true }); s = play(s, 0, give(s, 0, 'F폭격기 교수님'));
   assert.deepStrictEqual(s.seats[0].board.map(m => m.name), ['F폭격기 교수님']); assert.strictEqual(s.seats[1].board.length, 0); }
-// 잠수탄 조원: 매 턴 끝에 다른 아군 2 피해 + 그만큼 회복 / 죽메 상대 영웅 6
+// 잠수탄 조원: 매 턴 끝에 다른 아군 2 피해 + 그만큼 회복 / 유언 상대 영웅 6
 { let s = setup(); const g = put(s, 0, card('발표 10분 전 잠수탄 조원'), { hp: 3 }); put(s, 0, { name: 'a', atk: 1, hp: 5 }); put(s, 0, { name: 'b', atk: 1, hp: 1 });
   s = end(s, 0); assert.strictEqual(s.seats[0].board.find(m => m.name === 'a').hp, 3); assert(!s.seats[0].board.some(m => m.name === 'b'));
   assert.strictEqual(s.seats[0].board[0].hp, 6, '준 피해 2+1 회복');
   s = end(s, 1); assert.strictEqual(s.seats[0].board.find(m => m.name === 'a').hp, 1, '상대 턴 끝에도 발동');
   const killer = put(s, 1, { name: 'k', atk: 20, hp: 20 }); s.seats[0].board.find(m => m.name === 'a').hp = 1; s = end(s, 0); const hp1 = s.seats[1].hp;
-  s = atk(s, 1, killer.id, mt(0, g.id)); assert.strictEqual(s.seats[1].hp, hp1 - 6, '죽음의 메아리 6'); }
+  s = atk(s, 1, killer.id, mt(0, g.id)); assert.strictEqual(s.seats[1].hp, hp1 - 6, '유언 6'); }
 // 군기반장 복학생: 비용 4 이하 적 하수인 침묵+처치, 상대는 턴당 1장
 { let s = setup(); put(s, 1, { name: 'cheap', atk: 1, hp: 9, cost: 4 }, { shield: true }); put(s, 1, { name: 'big', atk: 1, hp: 9, cost: 6 });
   s = play(s, 0, give(s, 0, '군기반장 복학생')); assert.deepStrictEqual(s.seats[1].board.map(m => m.name), ['big']);

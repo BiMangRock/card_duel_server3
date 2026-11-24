@@ -191,7 +191,7 @@
       if (r.ok) c.check = r.data.check; q('ckBox').innerHTML = checkHtml(c.check); q('bRecheck').disabled = false;
     };
   }
-  const WHEN = { bc: '전투의 함성', death: '죽음의 메아리', end: '내 턴이 끝날 때' };
+  const WHEN = { bc: '등장', death: '유언', end: '내 턴이 끝날 때' };
   function summonsHtml(list, depth) {             // 소환수 → 소환수 … (최대 3단계)
     return list.map(cs => { const t = cs.token || {};
       const tags = Object.keys(KW).filter(k => t[k]).map(k => `<span class="tg">${KW[k]}</span>`).join('');

@@ -14,7 +14,7 @@
   const F0 = 32, G_TOTAL = 128;
   const num = v => (typeof v === 'number' && isFinite(v) ? v : 0);
   const r4 = v => Math.round(v * 1e4) / 1e4;
-  let REG = REG3_0, regSource = '내장', ALIASES = {};
+  let REG = REG3_0, regSource = '내장', ALIASES = (typeof CARD_RENAMES !== 'undefined') ? Object.fromEntries(Object.entries(CARD_RENAMES).map(([o, n]) => [n, o])) : {};   // 새 카드 이름 → 번호표의 옛 이름 (cardrenames.js)
 
   function sha1hex(str) {
     const bytes = new TextEncoder().encode(str), l = bytes.length, nb = (((l + 8) >> 6) + 1) << 6;

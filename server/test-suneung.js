@@ -86,7 +86,7 @@ const bear = { name: '시험 곰', atk: 5, hp: 5 };
 // 수능 샤프: 죽으면 무작위 적 하수인에게 독성 피해 → 처치
 { let s = setup(); const sh = put(s, 0, card('샤프심 똑 부러진 수능 샤프')); put(s, 1, { name: '큰 곰', atk: 1, hp: 9 }); const killer = put(s, 1, bear);
   s = end(s, 0); s = ok(E.apply(s, { type: 'ATTACK', attackerId: killer.id, target: mt(0, sh.id) }, 1));
-  assert.strictEqual(s.seats[1].board.length, 0, '독성: 큰 곰은 죽메로, 공격한 곰은 독성 반격으로'); }
+  assert.strictEqual(s.seats[1].board.length, 0, '독성: 큰 곰은 유언으로, 공격한 곰은 독성 반격으로'); }
 // 보온도시락: 죽으면 상대의 다음 턴 드로우 -1 + 무작위 하수인 기절
 { let s = setup(); const lb = put(s, 0, card('체증을 유발하는 보온도시락')); const att = put(s, 1, { name: '큰 곰', atk: 9, hp: 9 }); put(s, 1, bear);
   s = end(s, 0); s = ok(E.apply(s, { type: 'ATTACK', attackerId: att.id, target: mt(0, lb.id) }, 1)); s = end(s, 1);

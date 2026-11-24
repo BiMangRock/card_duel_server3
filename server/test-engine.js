@@ -38,7 +38,7 @@ const dist = {}; CARD_POOL.forEach(c => { dist[c.rarity] = (dist[c.rarity] || 0)
 console.log('희귀도 분포', JSON.stringify(dist));
 const starter = Col.starterCollection(CARD_POOL, E.defaultDeckList());
 assert.strictEqual(Col.validateDeckOwned(E.defaultDeckList(), starter), null, '스타터로 추천 덱을 못 만들어요');
-assert.ok(Col.validateDeckOwned(['데스윙'], starter), '전설 카드는 스타터에 없어야 해요');
+assert.ok(Col.validateDeckOwned(['파멸의 흑룡'], starter), '전설 카드는 스타터에 없어야 해요');
 assert.strictEqual(E.validateDeckList(E.defaultDeckList()), null, '추천 덱이 규칙에 안 맞아요');
 
 console.log('✔ 엔진 테스트 통과');

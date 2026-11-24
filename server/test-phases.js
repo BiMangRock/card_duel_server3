@@ -11,7 +11,7 @@ const POOL = C.phaseGainPool();
 function game(opts = {}) {
   return E.newGame(rng, { first: 0, phases: [null, { at: [66, 33, 15], armor: 5, pool: opts.pool || POOL }], uniques: [null, opts.unique || null], heroPowers: ['fireblast', 'armorUp'], ...opts.extra });
 }
-// 플레이어(좌석 0)의 영웅 능력 「화염 작렬」로 보스 영웅을 때리는 대신, 체력을 직접 깎고 아무 행동(턴 종료)으로 판정을 돌린다
+// 플레이어(좌석 0)의 영웅 능력 「불씨 튕기기」로 보스 영웅을 때리는 대신, 체력을 직접 깎고 아무 행동(턴 종료)으로 판정을 돌린다
 function hitBossTo(s, hp) { s.seats[1].hp = hp; s.seats[1].armor = 0; return E.apply(s, { type: 'END_TURN' }, s.turn); }
 
 // 1) 풀: 시작할 때만 작동하는 치트 · 룬 · 피로 면역은 없다

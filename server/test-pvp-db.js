@@ -26,7 +26,7 @@ const reset = () => Object.assign(PVP, saved);
   const own = E.defaultDeckList();
   await db.prepare('INSERT INTO decks(user_id,deck_json,updated_at) VALUES (?,?,?)').run(A, JSON.stringify(own.slice().reverse()), Date.now());
   assert.deepStrictEqual(await pvpdb.loadDeck(A), own.slice().reverse(), '저장한 덱을 쓴다');
-  await db.prepare('UPDATE decks SET deck_json=? WHERE user_id=?').run(JSON.stringify(own.slice(0, 29).concat(['데스윙'])), A);   // 안 가진 전설 카드가 섞인 덱 (조작)
+  await db.prepare('UPDATE decks SET deck_json=? WHERE user_id=?').run(JSON.stringify(own.slice(0, 29).concat(['파멸의 흑룡'])), A);   // 안 가진 전설 카드가 섞인 덱 (조작)
   assert.deepStrictEqual(await pvpdb.loadDeck(A), E.defaultDeckList(), '안 가진 카드가 든 덱은 추천 덱으로 대체');
   await db.prepare('UPDATE decks SET deck_json=? WHERE user_id=?').run('not json', A);
   assert.deepStrictEqual(await pvpdb.loadDeck(A), E.defaultDeckList(), '깨진 덱 데이터도 안전');

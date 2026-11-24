@@ -69,7 +69,7 @@ if(e.type==='seedDeck'){
 }
 
 [출력] 아래 JSON 한 개만 출력한다 (설명 문장, 마크다운 금지).
-{"mode":"data"|"new_effect","card":{...카드 데이터...},"newEffect":null 또는 {"type":"새이름","engineCode":"...","effectText":"전투의 함성: ..."},"reason":"이렇게 만든 이유와 밸런스 판단 (한국어 2문장 이내)"}
+{"mode":"data"|"new_effect","card":{...카드 데이터...},"newEffect":null 또는 {"type":"새이름","engineCode":"...","effectText":"등장: ..."},"reason":"이렇게 만든 이유와 밸런스 판단 (한국어 2문장 이내)"}
 
 [유저가 낸 아이디어]
 이름: ${input.name}
@@ -89,7 +89,7 @@ function mockAnswer(input) {
       newEffect: {
         type: 'swapDecks',
         engineCode: "if(e.type==='swapDecks'){\n  const A=s.seats[seat], B=s.seats[other(seat)];\n  const tmp=A.deck; A.deck=B.deck; B.deck=tmp;\n  ev.push({type:'deckSwap', seat, src}); return;\n}",
-        effectText: '전투의 함성: 두 플레이어의 덱을 서로 바꿉니다',
+        effectText: '등장: 두 플레이어의 덱을 서로 바꿉니다',
       },
       reason: '기존 효과에 덱 교환이 없어 새 효과가 필요합니다. 덱이 통째로 바뀌므로 코스트를 높게 잡았습니다. (모의 답변)',
     };

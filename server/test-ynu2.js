@@ -26,12 +26,12 @@ const bear = { name: '시험 곰', atk: 5, hp: 5 };
 // 입대 직전의 광기: 돌진, 내 턴 끝에 내 영웅 2
 { let s = setup(); const m = put(s, 0, card('입대 직전의 광기'), { summoned: true }); const hp = s.seats[1].hp; s = atk(s, 0, m.id, ht(1)); assert.strictEqual(s.seats[1].hp, hp - 3, '돌진');
   const mine = s.seats[0].hp; s = end(s, 0); assert.strictEqual(s.seats[0].hp, mine - 2); }
-// 독박 쓴 조장: 아군 대신 맞고, 받는 피해 1 고정, 죽메로 아군 하나 처치
+// 독박 쓴 조장: 아군 대신 맞고, 받는 피해 1 고정, 유언으로 아군 하나 처치
 { let s = setup(); const g = put(s, 0, card('독박 쓴 조장')); const a = put(s, 0, { name: '팀원', atk: 1, hp: 3 }); put(s, 0, { name: '팀원2', atk: 1, hp: 3 }); const e = put(s, 1, { name: '적', atk: 7, hp: 9 });
   s = end(s, 0); s = atk(s, 1, e.id, mt(0, a.id));
   assert.strictEqual(s.seats[0].board.find(x => x.name === '팀원').hp, 3, '팀원은 멀쩡'); assert.strictEqual(s.seats[0].board.find(x => x.name === '독박 쓴 조장').hp, 4, '조장이 1만 맞음');
   s.seats[0].board.find(x => x.name === '독박 쓴 조장').hp = 1; const e2 = put(s, 1, { name: '적2', atk: 3, hp: 9 }); s = atk(s, 1, e2.id, mt(0, a.id));
-  assert(!s.seats[0].board.some(x => x.name === '독박 쓴 조장'), '조장 사망'); assert.strictEqual(s.seats[0].board.length, 1, '죽메로 무임승차 1명 처치'); }
+  assert(!s.seats[0].board.some(x => x.name === '독박 쓴 조장'), '조장 사망'); assert.strictEqual(s.seats[0].board.length, 1, '유언으로 무임승차 1명 처치'); }
 // 전 CC: 양옆 침묵 + 턴 끝 내 영웅 2
 { let s = setup(); put(s, 0, bear, { taunt: true }); put(s, 0, bear, { taunt: true }); const c = give(s, 0, '전공 필수에서 마주친 전 CC');
   s.seats[0].board.splice(1, 0); s = play(s, 0, c); s.seats[0].board = [s.seats[0].board[0], s.seats[0].board[2], s.seats[0].board[1]];

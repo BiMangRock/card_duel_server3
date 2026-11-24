@@ -97,10 +97,10 @@
   // ---------- 소환수 디자인 ----------
   //   selection: {id:'sum:bc'|'sum:death'|'sum:end', params:{count}, token:{name, atk, hp, kw:[키워드], art, summons:[{when:'death'|'end', count, token}]}}
   //   비용 = 마릿수 × (공 + 체 + 키워드 비용 + 소환수가 다시 부르는 소환 비용) ÷ 2   (턴 종료 소환은 매 턴 반복되므로 ×2)
-  const SUMMON_WHEN = { bc: '전투의 함성', death: '죽음의 메아리', end: '내 턴이 끝날 때' };
+  const SUMMON_WHEN = { bc: '등장', death: '유언', end: '내 턴이 끝날 때' };
   const SUMMON_ENTRIES = [
-    { id: 'sum:bc', kind: 'summon', when: 'bc', category: 'battlecry', text: '전투의 함성: 직접 디자인한 하수인 소환', help: '이름·공격력·체력·키워드·그림을 정한 소환수를 불러와요', pts: 0, params: [], warns: [] },
-    { id: 'sum:death', kind: 'summon', when: 'death', category: 'deathrattle', text: '죽음의 메아리: 직접 디자인한 하수인 소환', help: '죽으면 내가 디자인한 소환수가 나와요', pts: 0, params: [], warns: [] },
+    { id: 'sum:bc', kind: 'summon', when: 'bc', category: 'battlecry', text: '등장: 직접 디자인한 하수인 소환', help: '이름·공격력·체력·키워드·그림을 정한 소환수를 불러와요', pts: 0, params: [], warns: [] },
+    { id: 'sum:death', kind: 'summon', when: 'death', category: 'deathrattle', text: '유언: 직접 디자인한 하수인 소환', help: '죽으면 내가 디자인한 소환수가 나와요', pts: 0, params: [], warns: [] },
     { id: 'sum:end', kind: 'summon', when: 'end', category: 'turn', text: '내 턴이 끝날 때: 직접 디자인한 하수인 소환', help: '매 턴 끝에 소환해요 (예산 2배)', pts: 0, params: [], warns: [] },
   ];
   const KW_ENTRIES = CAT.EFFECT_CATALOG.filter(e => e.kind === 'kw');
@@ -119,7 +119,7 @@
     if (okArt(t.art)) out.art = t.art;
     for (const c of Array.isArray(t.summons) ? t.summons : []) {
       if (depth >= CUSTOM.SUMMON_DEPTH) { problems.push(`소환수가 소환수를 부르는 건 ${CUSTOM.SUMMON_DEPTH}단계까지예요`); break; }
-      if (c.when !== 'death' && c.when !== 'end') continue;   // 소환수는 손에서 내는 카드가 아니라서 전투의 함성이 없다
+      if (c.when !== 'death' && c.when !== 'end') continue;   // 소환수는 손에서 내는 카드가 아니라서 등장이 없다
       out.summons.push({ when: c.when, count: int(c.count, 1, CUSTOM.SUMMON_MAX, 1), token: cleanToken(c.token, depth + 1, problems, opts) });
     }
     if (out.summons.length > 2) { problems.push('소환수 하나에 소환 효과는 2개까지예요'); out.summons = out.summons.slice(0, 2); }
@@ -129,13 +129,13 @@
   const summonCost = c => Math.max(1, Math.ceil(c.count * tokenValue(c.token) / 2)) * (c.when === 'end' ? 2 : 1);
   const tokenDesc = t => `${t.name || '소환수'}(${t.atk}/${t.hp}${t.kw.length ? ' ' + t.kw.map(k => KW_LABEL[k]).join('·') : ''})`;
   const summonText = c => (c.when === 'end' ? '내 턴이 끝날 때, ' : SUMMON_WHEN[c.when] + ': ') + `${tokenDesc(c.token)}을(를) ${c.count}마리 소환합니다`;
-  function joinTexts(texts) {                     // 같은 머리말(전투의 함성 · 죽음의 메아리)은 하나로 묶는다
+  function joinTexts(texts) {                     // 같은 머리말(등장 · 유언)은 하나로 묶는다
     const groups = new Map(), plain = [];
     for (const t0 of texts) {
-      const t = t0.replace(/[.。]\s*$/, ''), m = /^(전투의 함성|죽음의 메아리): (.*)$/.exec(t);
+      const t = t0.replace(/[.。]\s*$/, ''), m = /^(등장|유언): (.*)$/.exec(t);
       if (m && !/\. /.test(m[2])) { if (!groups.has(m[1])) groups.set(m[1], []); groups.get(m[1]).push(m[2]); } else plain.push(t);
     }
-    const order = ['전투의 함성', '죽음의 메아리'].filter(h => groups.has(h));   // 함성 → 죽메 → 나머지 순서
+    const order = ['등장', '유언'].filter(h => groups.has(h));   // 함성 → 유언 → 나머지 순서
     return [...order.map(h => `${h}: ${groups.get(h).join(', ')}`), ...plain].join('. ');
   }
   function tokenData(t) {                         // 엔진이 쓰는 소환수 모양
@@ -197,7 +197,7 @@
       const rest = bcs.filter(l => l !== first).map(l => partOf(l.entry, l.params).effect);
       if (rest.length) card.bcExtra = rest;                           // 나머지 함성: 대상이 필요하면 무작위
     }
-    // 카드 문장: 같은 머리말(전투의 함성 · 죽음의 메아리)은 하나로 묶는다 — 함성은 실제로 발동하는 순서(직접 고르는 것 먼저)
+    // 카드 문장: 같은 머리말(등장 · 유언)은 하나로 묶는다 — 함성은 실제로 발동하는 순서(직접 고르는 것 먼저)
     const firstBc = bcs.length ? (bcs.find(l => l.entry.targeted) || bcs[0]) : null;
     const ordered = [...(firstBc ? [firstBc] : []), ...lines.filter(l => l !== firstBc)];
     const txt = joinTexts(ordered.filter(l => l.entry.kind !== 'kw').map(l => l.text));
@@ -206,7 +206,7 @@
     card.rarity = effPts >= 8 ? '전설' : effPts >= 5 ? '특급' : effPts >= 2 ? '희귀' : '일반';
 
     const warns = [...new Set(lines.flatMap(l => l.warns))];
-    if (bcs.filter(l => l.entry.targeted).length > 1) warns.push('대상을 고르는 전투의 함성이 여러 개예요. 첫 번째만 직접 고르고 나머지는 무작위 대상이에요');
+    if (bcs.filter(l => l.entry.targeted).length > 1) warns.push('대상을 고르는 등장이 여러 개예요. 첫 번째만 직접 고르고 나머지는 무작위 대상이에요');
     return { ok: !problems.length, card, budget, lines: lines.map(({ entry, ...l }) => l), warns, problems: [...new Set(problems)] };
   }
 

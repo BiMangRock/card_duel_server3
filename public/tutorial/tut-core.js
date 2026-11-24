@@ -1,5 +1,5 @@
 // tut-core.js (v143) — 3·4부 튜토리얼 공용 진행기 (화면 · 입력 · 대화 · 연출)
-//  - 기본·고급 튜토리얼(index.html · advanced.html)의 진행 방식(제이나와 가로쉬의 대화, 노란 테두리 안내, 끌어서 내기)을 그대로 따른다
+//  - 기본·고급 튜토리얼(index.html · advanced.html)의 진행 방식(엘라와 카르바의 대화, 노란 테두리 안내, 끌어서 내기)을 그대로 따른다
 //  - 규칙은 실제 게임 엔진(/js/engine.js)이 처리한다. 대본은 window.TUT (part1.js · part2.js), 대본 도우미는 window.TL (tut-logic.js)
 //  - 새로 다루는 것: 멀리건 창 · 영웅 능력 버튼 · 방어도 · 하수인 놓을 자리 · 선택/발견 창 · 막히는 상대 행동(모면·은신) · 과부하 잠금 표시
 (function () {
@@ -7,7 +7,7 @@
   const T = window.TUT, $ = q => document.querySelector(q), sleep = ms => new Promise(r => setTimeout(r, ms));
   const el = (tag, cls, html) => { const e = document.createElement(tag); if (cls) e.className = cls; if (html != null) e.innerHTML = html; return e; };
   const ENG = { newGame, apply, CARD_POOL };
-  const NAME = { J: '제이나', G: '가로쉬' }, MOOD = { 0: 'J1', 1: 'G1' };
+  const NAME = { J: '엘라', G: '카르바' }, MOOD = { 0: 'J1', 1: 'G1' };
   const face = k => `images/${k}.jpg`;
   const FX_SPELL = { '불꽃 화살': 'fx_fire_arrow.png', '화염구': 'fx_fireball.png', '치유의 빛': 'fx_holy_heal.png' };
   const byName = new Map(CARD_POOL.map(c => [c.name, c]));
@@ -204,7 +204,7 @@
   /* ---------- 동전 던지기 · 멀리건 ---------- */
   function coinToss() {
     const o = el('div', 'coinfx', '<div class="coin"><b>🪙</b></div><div class="lbl">동전 던지기…</div>'); $('#stage').appendChild(o);
-    setTimeout(() => { o.querySelector('.lbl').innerHTML = '<b>가로쉬 선공</b> · 제이나 후공 <small>(카드 +1 · 동전)</small>'; }, 1300);
+    setTimeout(() => { o.querySelector('.lbl').innerHTML = '<b>카르바 선공</b> · 엘라 후공 <small>(카드 +1 · 동전)</small>'; }, 1300);
     setTimeout(() => o.classList.add('out'), 3600); setTimeout(() => o.remove(), 4200);
   }
   function openMulligan(st) {
@@ -370,7 +370,7 @@
         wrap.appendChild(hc); document.body.appendChild(wrap); setTimeout(() => wrap.remove(), 1200); await sleep(650);
       } else if (e.type === 'summon') {
         const p = at(`m:${e.seat}:${e.id}`); fxImg('fx_summon_crack.png', p, 150);
-        if (played && played.effect && played.type === 'minion' && played.name === e.name) bcb('전투의 함성!', '', { x: p.x, y: p.y - (e.seat ? -10 : 10) });
+        if (played && played.effect && played.type === 'minion' && played.name === e.name) bcb('등장!', '', { x: p.x, y: p.y - (e.seat ? -10 : 10) });
         await sleep(420);
       } else if (e.type === 'draw') {
         if (e.count > 0 && e.seat === 0 && e.src) { const p = at('h:0'); floatTxt(`카드 ${e.count}장 뽑기`, 'txt', { x: p.x + 60, y: p.y - 30 }); await sleep(420); }
@@ -388,7 +388,7 @@
         const p = at(`h:${e.seat}`); floatTxt('🛡 +' + e.amount, 'sh', p); await sleep(420);
       } else if (e.type === 'death') {
         const k = `m:${e.seat}:${e.id}`, c = clones[k], r = rects[k];
-        if (e.dr && r) bcb('죽음의 메아리!', 'dr', center(r));
+        if (e.dr && r) bcb('유언!', 'dr', center(r));
         if (c && r) { c.className += ' ghost'; Object.assign(c.style, { left: r.left + 'px', top: r.top + 'px', width: r.width + 'px', height: r.height + 'px', margin: 0 }); document.body.appendChild(c); setTimeout(() => c.remove(), 800); }
         await sleep(e.dr ? 650 : 300);
       } else if (e.type === 'revive') {
@@ -400,20 +400,20 @@
       else if (e.type === 'mana' && e.seat === 0) { const p = at('h:0'); floatTxt('마나 +' + (e.amount || e.value || ''), 'txt', { x: p.x + 60, y: p.y - 30 }); await sleep(420); }
       else if ((e.type === 'generated' || e.type === 'twin' || e.type === 'echoCopy' || e.type === 'echo') && e.seat === 0) { const p = at('h:0'); floatTxt((e.name || '카드') + ' 복사본!', 'txt', { x: p.x + 60, y: p.y - 30 }); await sleep(450); }
       else if (e.type === 'heroPower') { const p = at(`h:${e.seat}`); bcb((e.name || '영웅 능력') + '!', '', { x: p.x, y: p.y - 50 }); await sleep(450); }
-      else if (e.type === 'turn_start' && e.seat === 0) { DRAMA.turn(false, face(MOOD[0]), '제이나의 턴'); await sleep(600); }
+      else if (e.type === 'turn_start' && e.seat === 0) { DRAMA.turn(false, face(MOOD[0]), '엘라의 턴'); await sleep(600); }
     }
   }
 
   /* ---------- 상대 턴 (고정 대본) ---------- */
   async function runEnemy(n) {
     const turn = T.enemyTurns[n];
-    busy = enemyRun = true; render(); DRAMA.turn(true, face(MOOD[1]), '가로쉬의 턴'); await sleep(1100);
+    busy = enemyRun = true; render(); DRAMA.turn(true, face(MOOD[1]), '카르바의 턴'); await sleep(1100);
     for (const act of turn.acts) {
       const a = TL.enemyAction(S, act);
       if (TL.isBlocked(act)) {
         if (a.type === 'PLAY_CARD') {
           const c = S.seats[1].hand.find(x => x.id === a.cardId), wrap = el('div', 'spellshow');
-          wrap.innerHTML = `<div class="lbl">가로쉬: ${c.name} → ${act.target.name || '영웅'}?</div>`; document.body.appendChild(wrap); setTimeout(() => wrap.remove(), 1200);
+          wrap.innerHTML = `<div class="lbl">카르바: ${c.name} → ${act.target.name || '영웅'}?</div>`; document.body.appendChild(wrap); setTimeout(() => wrap.remove(), 1200);
           await sleep(700);
         } else await lunge(keyOf(TL.target(S, { seat: 1, name: act.blockedAttack })), keyOf(a.target));
         const r = apply(S, a, 1);
@@ -556,7 +556,7 @@
     document.querySelectorAll('.dr-taunt,.dr-chap,.dr-big,.dr-turn').forEach(e => e.remove());
     DRAMA.resetChapters(); render();
     const io = T.intro || {};
-    DRAMA.intro({ left: { img: face('J1'), name: '제이나', sub: '스톰윈드의 대마법사' }, right: { img: face(io.foe || 'G3'), name: '가로쉬', sub: '호드의 대족장' },
+    DRAMA.intro({ left: { img: face('J1'), name: '엘라', sub: '실바라의 대마법사' }, right: { img: face(io.foe || 'G3'), name: '카르바', sub: '북방 무리의 대족장' },
       title: io.title || T.title, sub: io.sub || '화면을 누르면 바로 시작' }).then(showStep);
   }
   window.closeModal = closeModal;

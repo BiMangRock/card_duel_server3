@@ -30,7 +30,7 @@ const PROGRESS = {
     { id: 'basic',    name: '기본 튜토리얼', text: '기본 튜토리얼 완료하기', url: '/tutorial/index.html',
       desc: '마나, 도발, 주문, 돌진', reward: { gold: 1000 }, rewardText: '1,000골드' },
     { id: 'advanced', name: '고급 튜토리얼', text: '고급 튜토리얼 완료하기', url: '/tutorial/advanced.html', needs: 'basic',
-      desc: '죽음의 메아리, 발견, 빙결, 주문 공격력', reward: { rarity: '전설' }, rewardText: '무작위 전설 카드 1장' },
+      desc: '유언, 발견, 빙결, 주문 공격력', reward: { rarity: '전설' }, rewardText: '무작위 전설 카드 1장' },
     { id: 'part1',    name: '실전 기본', text: '실전 기본 튜토리얼 완료하기', url: '/tutorial/part1.html', needs: 'advanced',
       desc: '선공과 후공, 멀리건, 영웅 능력, 방어도', reward: { rarity: '희귀' }, rewardText: '무작위 희귀 카드 1장' },
     { id: 'part2',    name: '키워드', text: '키워드 튜토리얼 완료하기', url: '/tutorial/part2.html', needs: 'part1',

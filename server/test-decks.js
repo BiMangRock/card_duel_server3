@@ -33,7 +33,7 @@ const server = http.createServer(app).listen(0, async () => {
     let r = await call('GET', '/api/decks');
     assert.strictEqual(r.data.slots.length, 1, '처음엔 1번 "내 덱"'); assert.strictEqual(r.data.active, 1); assert.deepStrictEqual(r.data.slots[0].deck, def);
     // 새 덱 (미완성 · 없는 카드 포함도 저장 가능)
-    r = await call('POST', '/api/decks', { name: '데스윙 덱', deck: ['데스윙', '들쥐'], heroPower: 'armorUp' });
+    r = await call('POST', '/api/decks', { name: '파멸의 흑룡 덱', deck: ['파멸의 흑룡', '들쥐'], heroPower: 'armorUp' });
     assert.strictEqual(r.status, 200, JSON.stringify(r.data)); const s2 = r.data.slot; assert.strictEqual(s2, 2);
     assert.strictEqual(r.data.slots.find(s => s.slot === 2).heroPower, 'armorUp');
     r = await call('POST', '/api/decks', { name: 'x', deck: ['없는카드'] }); assert.strictEqual(r.status, 400);
@@ -42,7 +42,7 @@ const server = http.createServer(app).listen(0, async () => {
     // 미완성 덱은 사용 불가
     r = await call('POST', `/api/decks/${s2}/activate`); assert.strictEqual(r.status, 400); assert(/2\/30/.test(r.data.error), r.data.error);
     // 30장이지만 없는 카드 → 사용 불가
-    const withLegend = def.slice(0, 29).concat(['데스윙']);
+    const withLegend = def.slice(0, 29).concat(['파멸의 흑룡']);
     r = await call('PUT', `/api/decks/${s2}`, { deck: withLegend, name: '  바뀐 이름  ' }); assert.strictEqual(r.status, 200); assert.strictEqual(r.data.slots.find(s => s.slot === 2).name, '바뀐 이름');
     r = await call('POST', `/api/decks/${s2}/activate`); assert.strictEqual(r.status, 400); assert(/없는 카드/.test(r.data.error), r.data.error);
     // 완성 덱 → 사용 중 → /api/save 의 덱이 바뀜

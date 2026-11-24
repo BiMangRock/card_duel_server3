@@ -22,7 +22,7 @@ const server = http.createServer(app).listen(0, async () => {
     assert.ok([200, 201].includes((await Dev('POST', '/api/signup', { username: 'devguy', nickname: 'devguy', password: 'password1' })).status));
     assert.ok([200, 201].includes((await User('POST', '/api/signup', { username: 'normal1', nickname: 'normal1', password: 'password1' })).status));
     await db.prepare("UPDATE users SET is_admin=1 WHERE username='devguy'").run();
-    const special = ['연구실의 군주 지도교수', '수강신청 서버 대폭발', 'F폭격기 교수님', '지옥의 중간고사', '데스윙'];   // 모험 전용 · 보스 전용 · 안 가진 전설
+    const special = ['연구실의 군주 지도교수', '수강신청 서버 대폭발', 'F폭격기 교수님', '지옥의 중간고사', '파멸의 흑룡'];   // 모험 전용 · 보스 전용 · 안 가진 전설
     const deck = [...special.flatMap(n => [n, n]), ...E.defaultDeckList().filter(n => !special.includes(n))].slice(0, 30);
     assert.strictEqual(E.validateDeckList(deck), null);
     for (const url of ['/api/deck', '/api/adventure/deck']) {

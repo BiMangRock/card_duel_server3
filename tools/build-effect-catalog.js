@@ -18,7 +18,7 @@ const SRC = fs.readFileSync(path.join(JS, 'engine.js'), 'utf8');
 const listConst = n => { const m = SRC.match(new RegExp('const ' + n + '=(\\[[^\\]]*\\])')); return m ? eval(m[1]) : []; };
 const NO_TARGET_FX = listConst('NO_TARGET_FX');
 const NEG_FLAGS = listConst('NEG_FLAGS');
-const TARGETED_BC = (() => {                      // 대상을 고르는 전투의 함성 (cardTargetsRaw 가 다루는 효과)
+const TARGETED_BC = (() => {                      // 대상을 고르는 등장 (cardTargetsRaw 가 다루는 효과)
   const a = SRC.indexOf('function cardTargetsRaw'), b = SRC.indexOf('\nfunction ', a + 10);
   return [...new Set([...SRC.slice(a, b).matchAll(/e\.type==='([a-zA-Z]+)'/g)].map(m => m[1]))];
 })();
@@ -57,7 +57,7 @@ const WARN = [
   [/1학년/, '1학년 하수인과 함께 써야 효과가 있어요'],
   [/거머리/, '거머리 카드와 함께 쓰는 효과예요'],
   [/혈기/, '혈기 카드가 있어야 효과가 있어요'],
-  [/트로그/, '깊은무쇠 트로그 전용 효과예요'],
+  [/바위굴 괴물/, '바위굴 괴물 전용 효과예요'],
   [/(암흑|신성|화염|냉기|비전|자연|부정|지식) 주문/, '해당 속성의 주문 카드와 함께 쓰면 좋아요'],
   [/주문을 (시전|쓸|낸)|시전한 주문|주문 수/, '주문 카드가 많은 덱에서 효과가 커요'],
   [/시체/, '시체는 내 하수인이 죽을 때마다 1개씩 쌓여요'],
@@ -163,11 +163,11 @@ for (const en of entries.values()) {
       if (found && !/9\d{3}/.test(t)) tpl = t; else for (const p of params) delete p.inline;   // 계산된 숫자가 섞여 있으면 문장 속 입력칸은 쓰지 않는다
     }
   }
-  const drawback = en.kind === 'flag' && (Object.keys(en.template).some(k => DRAWBACK_KEYS.has(k)) || DRAWBACK_TEXT.test(text)) && !/전투의 함성/.test(text);
+  const drawback = en.kind === 'flag' && (Object.keys(en.template).some(k => DRAWBACK_KEYS.has(k)) || DRAWBACK_TEXT.test(text)) && !/등장/.test(text);
   let category;
   if (en.kind === 'bc') category = 'battlecry';
   else if (drawback) category = 'drawback';
-  else if (/^죽음의 메아리|죽음의 메아리:/.test(text)) category = 'deathrattle';
+  else if (/^유언|유언:/.test(text)) category = 'deathrattle';
   else if (/턴이 끝날 때|턴이 시작될 때|턴 종료|턴 시작|매 턴/.test(text)) category = 'turn';
   else if (/할 때마다|한 후에|된 후에|받은 후|입을 때마다|받을 때마다|처치하면|처치한 후|소환될 때마다|소환된 후|공격할 때/.test(text)) category = 'reaction';
   else category = 'aura';
@@ -187,7 +187,7 @@ const kw = KEYWORDS.map(([key, label, help, pts]) => ({ id: 'kw:' + key, kind: '
 const all = [...kw, ...out];
 
 const CATEGORIES = [
-  ['keyword', '키워드'], ['battlecry', '전투의 함성'], ['deathrattle', '죽음의 메아리'],
+  ['keyword', '키워드'], ['battlecry', '등장'], ['deathrattle', '유언'],
   ['turn', '턴 시작·종료'], ['reaction', '반응'], ['aura', '상시'], ['drawback', '단점'],
 ];
 const counts = Object.fromEntries(CATEGORIES.map(([k]) => [k, all.filter(e => e.category === k).length]));

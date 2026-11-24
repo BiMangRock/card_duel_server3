@@ -59,7 +59,7 @@ const names = (s, seat) => s.seats[seat].board.map(x => x.name);
 // 최종 면접 올패스: 방어도 8, +3, 이번 턴 면역
 { let s = setup(); const a = put(s, 0, { name: 'a', atk: 2, hp: 3 }); const e = put(s, 1, { name: 'e', atk: 9, hp: 9 }); s = play(s, 0, give(s, 0, '최종 면접 올패스'));
   assert.strictEqual(s.seats[0].armor, 8); s = atk(s, 0, a.id, mt(1, e.id)); assert.deepStrictEqual([find(s, 0, a.id).hp, find(s, 1, e.id).hp], [3, 4]); s = end(s, 0); assert.strictEqual(find(s, 0, a.id).atk, 2); }
-// 마지막 벚꽃길: 아군 둘 +1/+1·죽메(영웅 3 회복), 6/6 4학년 소환
+// 마지막 벚꽃길: 아군 둘 +1/+1·유언(영웅 3 회복), 6/6 4학년 소환
 { let s = setup(); const a = put(s, 0, { name: 'a', atk: 1, hp: 1 }); s = play(s, 0, give(s, 0, '마지막 벚꽃길')); s = end(s, 0);
   assert(names(s, 0).includes('4학년')); const m = find(s, 0, a.id); assert.strictEqual(m.deathHeroHeal, 3); s.seats[0].hp = 20;
   s = play(s, 1, give(s, 1, '불꽃 화살'), mt(0, a.id)); assert.strictEqual(s.seats[0].hp, 23); }
@@ -72,7 +72,7 @@ const names = (s, seat) => s.seats[seat].board.map(x => x.name);
 // 판다렌 선배: 양쪽 마나 수정 1
 { let s = setup(); s = play(s, 0, give(s, 0, '캠퍼스의 신선, 판다렌 선배')); assert.deepStrictEqual([s.seats[0].maxMana, s.seats[1].maxMana, s.seats[0].mana], [1, 1, 1]); s = end(s, 0); assert.strictEqual(s.seats[1].maxMana, 2); }
 // 사회 초년생: 손에 6코+ 있으면 +2/+2·돌진
-{ let s = setup(); give(s, 0, '데스윙'); s = play(s, 0, give(s, 0, '어엿한 사회 초년생')); const m = s.seats[0].board[0]; assert.deepStrictEqual([m.atk, m.hp, !!m.charge], [7, 7, true]); s = atk(s, 0, m.id, ht(1)); }
+{ let s = setup(); give(s, 0, '파멸의 흑룡'); s = play(s, 0, give(s, 0, '어엿한 사회 초년생')); const m = s.seats[0].board[0]; assert.deepStrictEqual([m.atk, m.hp, !!m.charge], [7, 7, true]); s = atk(s, 0, m.id, ht(1)); }
 { let s = setup(); s = play(s, 0, give(s, 0, '어엿한 사회 초년생')); assert.strictEqual(s.seats[0].board[0].atk, 5); }
 console.log('✔ 4학년 보스 카드 15장 + 파생 카드');
 

@@ -27,16 +27,16 @@ const ok = name => console.log('✔ ' + name);
   assert.strictEqual(B.length, 3, '원본 + 복사본 2');
   assert.ok(B[0].revive, '원본에 환생');
   assert.ok(B.slice(1).every(m => m.atk === 1 && m.hp === 1 && m.isMini && m.name.endsWith('(미니)')), '1/1 미니');
-  assert.ok(B.slice(1).every(m => Object.keys(card('유물 수집가')).filter(k => /^death/.test(k)).every(k => m[k] !== undefined)), '복사본도 죽음의 메아리 유지');
+  assert.ok(B.slice(1).every(m => Object.keys(card('유물 수집가')).filter(k => /^death/.test(k)).every(k => m[k] !== undefined)), '복사본도 유언 유지');
   const s2 = game({ drCopy: 1, drRevive: true }); const c2 = give(s2, 0, '들쥐');
-  assert.strictEqual(act(s2, 0, { type: 'PLAY_CARD', cardId: c2.id }).state.seats[0].board.length, 1, '죽음의 메아리가 아니면 복사 없음');
+  assert.strictEqual(act(s2, 0, { type: 'PLAY_CARD', cardId: c2.id }).state.seats[0].board.length, 1, '유언이 아니면 복사 없음');
   ok('메아리 군단 · 죽지 않는 자의 무덤'); }
 
-// 2) 함성의 잔향: 전투의 함성 하수인을 뽑으면 1/1 복사본
+// 2) 등장의 잔향: 등장 하수인을 뽑으면 1/1 복사본
 { const s = game({ bcDrawCopy: 1 }); s.seats[0].deck.push({ ...structuredClone(card('화염 정령')), id: s.nextId++, inDeck: true });
   const r = act(s, 0, { type: 'END_TURN' }); const s2 = act(r.state, 1, { type: 'END_TURN' }).state;
-  const h = s2.seats[0].hand; assert.ok(h.some(c => c.name === '화염 정령') && h.some(c => c.name === '화염 정령 (미니)' && c.cost === 1 && c.effect), '미니 복사본(전투의 함성 유지)');
-  ok('함성의 잔향'); }
+  const h = s2.seats[0].hand; assert.ok(h.some(c => c.name === '화염 정령') && h.some(c => c.name === '화염 정령 (미니)' && c.cost === 1 && c.effect), '미니 복사본(등장 유지)');
+  ok('등장의 잔향'); }
 
 // 3) 무한 굴레
 { const s = game({ infiniteLoop: 1 }); const sp = give(s, 0, '불꽃 화살'), mi = give(s, 0, '들쥐');
@@ -46,10 +46,10 @@ const ok = name => console.log('✔ ' + name);
   assert.strictEqual(r.state.seats[0].hand.filter(c => c.type === 'spell').length, 1, '하수인 → 무작위 주문');
   ok('무한 굴레'); }
 
-// 4) 학자 롬메스의 두루마리: 처음 덱에 없던 카드만 비용 -N
+// 4) 학자의 두루마리: 처음 덱에 없던 카드만 비용 -N
 { const s = game({ rommath: 2 }); const a = give(s, 0, '화염구'), b = give(s, 0, '화염구', { inDeck: undefined });
   assert.strictEqual(handCost(s, 0, a.id), 4); assert.strictEqual(handCost(s, 0, b.id), 2);
-  ok('학자 롬메스의 두루마리'); }
+  ok('학자의 두루마리'); }
 
 // 5) 너도? 나도? (양쪽): 발견하고 남은 2장이 상대 손으로 — 보스(1번)에게만 걸어도 0번에게 적용
 { const s = game({}, { youMe: true }); assert.ok(s.seats[0].mods.youMe, '양쪽 규칙이 0번에도');

@@ -1,4 +1,4 @@
-/* tut-drama.css (v143) — 튜토리얼 1~4부 공용 연출: 대결 오프닝 · 장 제목 카드 · 가로쉬 도발 말풍선 · 타격 흔들림 · 결정타 · 승리 */
+/* tut-drama.css (v143) — 튜토리얼 1~4부 공용 연출: 대결 오프닝 · 장 제목 카드 · 카르바 도발 말풍선 · 타격 흔들림 · 결정타 · 승리 */
 
 /* 화면 흔들림 */
 .dr-shake1{animation:drShake1 .32s ease-out}
@@ -43,7 +43,7 @@
 @keyframes drChap{0%{opacity:0;transform:scaleY(.2)}12%{opacity:1;transform:none}82%{opacity:1}100%{opacity:0;transform:translateY(-10px)}}
 @keyframes drLine{0%{transform:scaleX(0)}25%{transform:scaleX(1)}100%{transform:scaleX(1)}}
 
-/* 가로쉬의 말풍선 (전장 위) */
+/* 카르바의 말풍선 (전장 위) */
 .dr-taunt{position:fixed;z-index:56;pointer-events:none;max-width:min(300px,46vw);padding:8px 13px;border-radius:14px;font:700 14px/1.45 var(--font);color:#fff;
   background:linear-gradient(180deg,#5a1d16,#3a120e);border:2px solid #e0584a;box-shadow:0 8px 24px rgba(0,0,0,.6);animation:drTaunt 3.2s ease-out forwards}
 .dr-taunt::before{content:'';position:absolute;left:-10px;top:16px;border:8px solid transparent;border-right-color:#e0584a;border-left:0}

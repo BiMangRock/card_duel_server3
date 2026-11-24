@@ -221,7 +221,7 @@ function eventText(ev){
     case 'deckTransform': return `${who(ev.seat)} ${ev.src.name}: 덱의 주문 ${ev.count}장이 변신했어요`;
     case 'deckAdd': return ev.count ? `${who(ev.src.seat)} ${ev.src.name}: 무작위 주문 ${ev.count}장을 덱에 섞어 넣음` : (ev.seat===MY ? `${ev.src.name}: 덱에 ${ev.name}을(를) 섞음` : `상대가 덱에 카드를 섞어 넣었어요`);   // v73: 중복돼 있던 두 줄을 합침
     case 'grant': return `${who(ev.src.seat)} ${ev.src.name}: ${ev.name}에게 ${ev.kws.join('·')} 부여`;
-    case 'mount': return `${who(ev.src.seat)} ${ev.src.name}: ${ev.name}에게 도발과 죽음의 메아리 부여`;
+    case 'mount': return `${who(ev.src.seat)} ${ev.src.name}: ${ev.name}에게 도발과 유언 부여`;
     case 'cardsDiscount': return ev.seat===MY ? `${ev.src.name}: 얻은 주문 ${ev.count}장의 비용 -${ev.amount}` : `상대가 얻은 주문 ${ev.count}장의 비용이 감소했어요`;
     case 'haste': return `${who(ev.src.seat)} ${ev.src.name}: ${ev.name} 바로 공격 가능!`;
     case 'fatigue': return `${who(ev.seat)} 덱이 비어 탈진! (${ev.amount} 피해)`;
@@ -236,10 +236,10 @@ function eventText(ev){
     case 'crystal': return `${who(ev.src.seat)} ${ev.src.name}: 빈 마나 수정 ${ev.amount}개 획득`;
     case 'nextMana': return `${who(ev.src.seat)} ${ev.src.name}: 다음 턴에만 마나 수정 ${ev.amount}개 획득`;
     case 'armorLater': return `${who(ev.src.seat)} ${ev.src.name}: 다음 턴 시작에 방어도 +${ev.amount} 예약`;
-    case 'compost': return `${who(ev.src.seat)} ${ev.src.name}: 하수인 ${ev.count}기에게 죽음의 메아리 부여`;
+    case 'compost': return `${who(ev.src.seat)} ${ev.src.name}: 하수인 ${ev.count}기에게 유언 부여`;
     case 'ascend': return ev.later!=null ? `${who(ev.src.seat)} ${ev.src.name}: 빈 마나 수정 +${ev.amount} (최대 마나 ${ev.now}), 다음 턴 시작에 최대 마나 +${ev.later}`   // 옛 리플레이
       : `${who(ev.src.seat)} ${ev.src.name}: 최대 마나 +${ev.amount}`+(ev.crystal?`, 빈 마나 수정 +${ev.crystal}`:'')+`, 최대 마나 ${ev.now}`;
-    case 'forestSoul': return `${who(ev.src.seat)} ${ev.src.name}: 하수인 ${ev.count}기에게 죽음의 메아리 부여`;
+    case 'forestSoul': return `${who(ev.src.seat)} ${ev.src.name}: 하수인 ${ev.count}기에게 유언 부여`;
     case 'recycle': return `${who(ev.src.seat)} ${ev.src.name}: 손패 ${ev.count}장을 덱에 섞고, 덱의 모든 카드 비용 -${ev.amount}`;
     case 'shrink': return `${who(ev.src.seat)} ${ev.src.name}: 덱의 하수인 ${ev.count}장의 비용·공격력 -${ev.amount}`;
     case 'toDeck': return ev.vanish ? `${who(ev.src.seat)} ${ev.src.name}: ${ev.name} 사라짐` : `${who(ev.src.seat)} ${ev.src.name}: ${ev.name}을(를) ${ev.seat===MY?'내':'상대'} 덱에 섞어 넣음`;   // v71
@@ -266,7 +266,7 @@ function eventText(ev){
     case 'handDouble': return `${who(ev.src.seat)} ${ev.src.name}: 손패 하수인 ${ev.count}장의 공격력·생명력 2배`;
     case 'storm': return `${who(ev.seat)} ${ev.src.name}: 이번 게임 동안 주문을 시전할 때마다 같은 비용의 하수인을 소환`;
     case 'heroAtk': return `${who(ev.src.seat)} ${ev.src.name}: 영웅 공격력 +${ev.amount} (이번 턴)`;
-    case 'spellburst': return `${who(ev.seat)} ${ev.name}: 주문폭주 발동!`;
+    case 'spellburst': return `${who(ev.seat)} ${ev.name}: 과충전 발동!`;
     case 'targetWait': return ev.seat===MY ? '두 번째 대상' : null;
     case 'discover': return `${who(ev.seat)} ${ev.src.name}: 카드 중 하나를 발견해요`;
     case 'choicePick': return `${who(ev.seat)} 선택: ${ev.name}${ev.auto?' (자동)':''}`;
@@ -284,8 +284,8 @@ function eventText(ev){
     case 'deckBuff': return `${who(ev.seat)} ${ev.src.name}: 덱의 하수인 ${ev.count}장 +${ev.amount}/+${ev.amount}`;
     case 'discard': return ev.count ? `${who(ev.seat)} ${ev.src.name}: 손패 ${ev.count}장을 모두 버렸어요` : null;
     case 'echoCopy': return `${who(ev.seat)} ${ev.name}: 잔상`;
-    case 'dmgDouble': return `${who(ev.seat)} ${ev.src&&ev.src.name||'타르막'}: 이번 턴 동안 하수인이 받는 피해가 2배!`;
-    case 'echo': return `${who(ev.seat)} ${ev.name}: 전투의 함성이 한 번 더 발동!`;
+    case 'dmgDouble': return `${who(ev.seat)} ${ev.src&&ev.src.name||'약점 노출'}: 이번 턴 동안 하수인이 받는 피해가 2배!`;
+    case 'echo': return `${who(ev.seat)} ${ev.name}: 등장이 한 번 더 발동!`;
     case 'surrender': return `${who(ev.seat)} 항복했어요.`;
     case 'note': return `${who(ev.seat)} ${ev.src&&ev.src.name?ev.src.name+': ':''}${ev.text}`;   // v117 보스 카드 효과 알림
     case 'death': return `${who(ev.seat)} ${ev.name} 파괴됨`;
@@ -325,7 +325,7 @@ function showEffect(ev){
   else if(ev.type==='revive'){ floatOn(minionT(ev.seat, ev.id),'환생!','heal'); }
   else if(ev.type==='mana'){ floatOn(heroT(ev.seat),'마나 +'+ev.amount,'buff'); }
   else if(ev.type==='heroAtk'){ floatOn(heroT(ev.seat),'공격력 +'+ev.amount,'buff'); }
-  else if(ev.type==='spellburst'){ floatOn(minionT(ev.seat, ev.id),'주문폭주!','buff'); }
+  else if(ev.type==='spellburst'){ floatOn(minionT(ev.seat, ev.id),'과충전!','buff'); }
   else if(ev.type==='haste'){ floatOn(ev.target,'급습!','buff'); const el=elOf(ev.target); if(el) el.classList.remove('sick'); }
   else if(ev.type==='freeze'){ floatOn(ev.target,'빙결','shield','freeze'); const el=elOf(ev.target); if(el) el.classList.add('frozen'); }
   else if(ev.type==='silence'){ floatOn(ev.target,'침묵','shield'); const el=elOf(ev.target); if(el) el.classList.remove('taunt','shielded','frozen','stealthed'); }
@@ -632,7 +632,7 @@ async function fxPlay(ev, ctx, shot){                // 이벤트 하나에 맞�
   }catch(e){ console.warn('fx',e); }
 }
 // ============ v159 피해 투사체: 피해를 준 쪽(영웅·하수인)에서 맞는 쪽으로 날아간다 ============
-// 주문 = 시전한 영웅에서 / 하수인 효과(전투의 함성·죽음의 메아리·턴 종료·주문 시전 후 발동 등) = 그 하수인에서
+// 주문 = 시전한 영웅에서 / 하수인 효과(등장·유언·턴 종료·주문 시전 후 발동 등) = 그 하수인에서
 // 일반 공격(돌진)·탈진·생명력 지불·스스로 깎이는 피해·영웅 능력(따로 날아감)은 제외
 const FX_KIND = {     // img = 투사체 그림(있으면), 없으면 색 구슬(c1 속 · c2 빛). hit = 명중 그림
   fire:     {img:['fire_arrow','fireball'], hit:['fire_burst','fireboom'], c1:'#ffb340', c2:'rgba(255,80,0,.8)'},
@@ -707,7 +707,7 @@ async function playEvents0(evs){
   // ---- v159 피해 투사체 ----
   const shotDone=new Map();   // 이벤트 번호 → 이미 날아온 투사체 정보 (한꺼번에 날린 일제 사격)
   const shotFast=new Set();   // 같은 출처가 3번 이상 연달아 무작위로 날리는 투사체 (빠르게)
-  const injectMinion=(seat,id,name)=>{   // 방금 낸 하수인이 전투의 함성으로 피해를 줄 때: 화면에 먼저 올려놓아야 거기서 투사체가 나간다
+  const injectMinion=(seat,id,name)=>{   // 방금 낸 하수인이 등장으로 피해를 줄 때: 화면에 먼저 올려놓아야 거기서 투사체가 나간다
     const all=Host.state.seats[seat].board; let fin=all.find(x=>x.id===id);
     if(!fin){ const b=CARD_POOL.find(c=>c.name===name && c.type==='minion'); if(!b) return false; fin={...structuredClone(b), id, maxHp:b.hp, attacked:true}; }   // 같은 행동 안에서 죽었으면 원래 카드 모습으로 잠깐 보여 준다
     if(!dv){ dv=structuredClone(view); dv.pending=null; dv.legal=[]; view=dv; }
@@ -782,18 +782,18 @@ async function playEvents0(evs){
         if(!dv){ dv=structuredClone(view); dv.pending=null; dv.legal=[]; view=dv; }
         const side=ev.seat===MY ? dv.me : dv.opp;
         if(!side.board.some(x=>x.id===ev.id) && side.board.length<CONFIG.MAX_BOARD){
-          const sn=structuredClone(fin); sn.summoned=true; delete sn.deathDraw; delete sn.deathSummon; delete sn.deathStego;   // v36: 나중 효과(죽음의 메아리 부여·이번 턴 공격력)는 그 이벤트가 재생될 때 붙는다
+          const sn=structuredClone(fin); sn.summoned=true; delete sn.deathDraw; delete sn.deathSummon; delete sn.deathStego;   // v36: 나중 효과(유언 부여·이번 턴 공격력)는 그 이벤트가 재생될 때 붙는다
           if(sn.tempAtk){ sn.atk-=sn.tempAtk; sn.tempAtk=0; }
           side.board.push(sn); render(true);
         }
       }
     }
-    if(ev.type==='compost' || ev.type==='forestSoul'){     // v36: 죽음의 메아리 부여는 그 주문이 시전되는 즉시 하수인 태그에 나타난다 (혼돈의 주문서 안에서도)
+    if(ev.type==='compost' || ev.type==='forestSoul'){     // v36: 유언 부여는 그 주문이 시전되는 즉시 하수인 태그에 나타난다 (혼돈의 주문서 안에서도)
       if(!dv){ dv=structuredClone(view); dv.pending=null; dv.legal=[]; view=dv; }
       const key=ev.type==='compost' ? 'deathDraw' : 'deathSummon', side=ev.seat===MY ? dv.me : dv.opp;
       side.board.forEach(m=>{ m[key]=(m[key]||0)+1; }); render(true);
     }
-    if(ev.type==='mount'){      // v61: 죽음의 메아리 태그·도발은 그 주문이 시전되는 즉시 나타난다 (혼돈의 주문서 안에서도)
+    if(ev.type==='mount'){      // v61: 유언 태그·도발은 그 주문이 시전되는 즉시 나타난다 (혼돈의 주문서 안에서도)
       if(!dv){ dv=structuredClone(view); dv.pending=null; dv.legal=[]; view=dv; }
       const side=ev.target.seat===MY ? dv.me : dv.opp, mm=side.board.find(x=>x.id===ev.target.id);
       if(mm){ mm.taunt=true; mm.deathStego=(mm.deathStego||0)+1; render(true); }
@@ -1033,7 +1033,7 @@ function attackReason(sel, t){
   }
   return '공격할 수 없어요.';
 }
-// 대상 고르기(주문·영웅 능력·전투의 함성) 중 고를 수 없는 대상을 눌렀을 때의 이유
+// 대상 고르기(주문·영웅 능력·등장) 중 고를 수 없는 대상을 눌렀을 때의 이유
 function targetReason(t){
   if(!t || (t.kind!=='minion' && t.kind!=='hero')) return null;
   if(t.kind==='minion'){
@@ -1378,7 +1378,7 @@ function placeAt(pos){
   const p=ui.place; if(!p) return;
   ui.place=null;
   if(p.entries.length===1 && !p.entries[0].target){ playerAction({...p.entries[0], pos}); return; }
-  ui.pending={cardId:p.cardId, entries:p.entries, pos, card:p.card};   // 전투의 함성 대상은 자리를 고른 뒤에 지정
+  ui.pending={cardId:p.cardId, entries:p.entries, pos, card:p.card};   // 등장 대상은 자리를 고른 뒤에 지정
   logLine('대상을 고르세요');
   render();
 }
@@ -1681,7 +1681,7 @@ const cardArt = c => CARD_ART[c.name] || c.art || (typeof cardByName==='function
 // ---------- v130 필드 하수인: 하스스톤처럼 타원 초상화 + 공격력(칼)·체력(핏방울)만. 설명은 마우스를 올리거나(터치는 꾹 누르기) 보면 된다 ----------
 //  카드 자체는 cardEl 그대로 만들고(미리보기·상세 창이 전체 카드를 쓰도록), 필드에서는 CSS(.zone .card)로 앞면 글을 숨긴다.
 //  여기서는 스탯 색(강화 초록 · 피해 빨강)과 작은 키워드 아이콘만 붙인다.
-const BOARD_TRIGGER_RE=/(턴이 끝날|턴이 시작|턴 종료|턴 시작|할 때마다|한 후에|된 후에|받은 후|입을 때마다|받을 때마다|소환될 때마다|소환되면|소환된 후|공격할 때마다|처치하면|처치한 후|시전할 때마다|시전한 후|낸 후에|낼 때마다|주문폭주)/;
+const BOARD_TRIGGER_RE=/(턴이 끝날|턴이 시작|턴 종료|턴 시작|할 때마다|한 후에|된 후에|받은 후|입을 때마다|받을 때마다|소환될 때마다|소환되면|소환된 후|공격할 때마다|처치하면|처치한 후|시전할 때마다|시전한 후|낸 후에|낼 때마다|과충전)/;
 function boardDecor(el, m){
   const base=cardByName(m.name)||{};
   if(base.rarity==='전설') el.classList.add('r-legend');
@@ -1690,7 +1690,7 @@ function boardDecor(el, m){
   if(l){ const mx=m.maxHp ?? m.hp; l.classList.toggle('hurt', m.hp<mx); l.classList.toggle('buffed', m.hp>=mx && typeof base.hp==='number' && mx>base.hp); }
   const eff=el.querySelector('.effect'), txt=(eff ? eff.textContent : '')+' '+(effectText(m)||''), ic=[];
   const add=(i,t)=>{ if(!ic.some(x=>x[1]===t)) ic.push([i,t]); };
-  if(/죽음의 메아리/.test(txt)) add('img:deathrattle','죽음의 메아리');
+  if(/유언/.test(txt)) add('img:deathrattle','유언');
   if(BOARD_TRIGGER_RE.test(effectText(m)||'') || m.spellburst) add('img:trigger','발동 효과');
   if(m.poison) add('img:poison','독성');
   if(m.lifesteal) add('img:lifesteal','생명력 흡수');
@@ -1730,7 +1730,7 @@ function cardEl(c, opts={}){
   if(c.rush) tags+='<span class="tag rush">속공</span>';
   if(c.revive) tags+='<span class="tag revive">환생</span>';
   if(c.elusive) tags+='<span class="tag elusive">모면</span>';
-  if(c.spellburst) tags+='<span class="tag" style="background:#6a3a14;color:#ffd9a0">주문폭주</span>';
+  if(c.spellburst) tags+='<span class="tag" style="background:#6a3a14;color:#ffd9a0">과충전</span>';
   if(c.lifesteal) tags+='<span class="tag lifesteal">생명력 흡수</span>';
   if(c.poison) tags+='<span class="tag poison">독성</span>';
   if(c.cantAttack) tags+='<span class="tag" style="background:#4a4a4a;color:#ddd">공격 불가</span>';   // v117 비문학 지문
@@ -1738,10 +1738,10 @@ function cardEl(c, opts={}){
   if(c.knightBy) tags+=`<span class="tag" style="background:#2a3a5a;color:#cfe0ff">${ICO('shield')} 흑기사</span>`;
   if(c.caffeineDoom) tags+=`<span class="tag" style="background:#7a3a10;color:#ffd9a0">${ICO('caffeine')} 카페인 쇼크 예정</span>`;
   if(c.freezeNext) tags+='<span class="tag frozen">겁먹음</span>';
-  if(c.deathPoisonShot||c.deathLunch||c.deathKill||c.deathFace||c.deathCaffeine||c.deathKillAlly||c.deathHandMinion) tags+='<span class="tag revive">죽음의 메아리</span>';
-  if(c.deathSummonCost) tags+='<span class="tag revive">죽음의 메아리</span>'; 
-  if(c.deathCopy||c.deathGain||c.deathHeroHeal) tags+='<span class="tag revive">죽음의 메아리</span>';   // v123 벚꽃길이 준 죽메 포함
-  if(c.deathDraw||c.deathSummon||c.deathStego||c.deathArmor||c.deathBuffAll||c.deathGrave||c.eggChicken||c.deathProto||c.deathAdjBuff||c.deathAoe||c.deathPtero||c.deathBeast||c.deathGhoul) tags+='<span class="tag revive">죽음의 메아리</span>';
+  if(c.deathPoisonShot||c.deathLunch||c.deathKill||c.deathFace||c.deathCaffeine||c.deathKillAlly||c.deathHandMinion) tags+='<span class="tag revive">유언</span>';
+  if(c.deathSummonCost) tags+='<span class="tag revive">유언</span>'; 
+  if(c.deathCopy||c.deathGain||c.deathHeroHeal) tags+='<span class="tag revive">유언</span>';   // v123 벚꽃길이 준 유언 포함
+  if(c.deathDraw||c.deathSummon||c.deathStego||c.deathArmor||c.deathBuffAll||c.deathGrave||c.eggChicken||c.deathProto||c.deathAdjBuff||c.deathAoe||c.deathPtero||c.deathBeast||c.deathGhoul) tags+='<span class="tag revive">유언</span>';
   if(c.mini) tags+='<span class="tag" style="background:#2a4a5c;color:#c8ecff">미니미</span>';
   if(c.isMini) tags+='<span class="tag" style="background:#2a4a5c;color:#c8ecff">미니</span>';
   if(c.stealth) tags+='<span class="tag" style="background:#2c2c3c;color:#c8c8e8">은신</span>';
@@ -2345,11 +2345,11 @@ const GUIDE_FX=[
  {n:'빙결', d:'frozen', t:'얼어 있는 동안 공격할 수 없다.', demo:'<i class="me">3</i><b class="ov" style="left:8px;right:auto;top:14px;height:46px;width:34px"></b><em>❄ 공격 불가</em>'},
  {n:'독성', d:'poison', t:'피해를 입은 하수인은 죽는다.', demo:'<i class="me">1</i><i class="en">8</i><em>피해를 입히면 처치</em>'},
  {n:'생명력 흡수', d:'ls', t:'준 피해만큼 내 영웅이 회복한다.', demo:'<i class="me">3</i><i class="en">2</i><em>피해 = 회복</em>'},
- {n:'죽음의 메아리', d:'death', t:'죽을 때 발동한다.', demo:'<i class="me">·</i><i class="en">2</i><em>죽으면 효과 발동</em>'},
+ {n:'유언', d:'death', t:'죽을 때 발동한다.', demo:'<i class="me">·</i><i class="en">2</i><em>죽으면 효과 발동</em>'},
 ];
 const GUIDE_TXT=[
- ['전투의 함성','손에서 낼 때 발동한다.'],
- ['주문폭주','주문을 쓴 뒤 한 번 발동한다.'],
+ ['등장','손에서 낼 때 발동한다.'],
+ ['과충전','주문을 쓴 뒤 한 번 발동한다.'],
  ['과부하 (N)','다음 턴에 마나 N개가 잠긴다.'],
  ['방어도','영웅 체력보다 먼저 깎인다.'],
  ['시체','내 하수인이 죽을 때마다 1개씩 쌓인다.'],
@@ -2402,13 +2402,13 @@ function gPager(kind, pages){
 function guideCard(){
   const M=CONFIG.MAX_MANA;
   const pages=[
-   {t:'하수인 카드', s:`<div class="g-card" style="background:none"><div class="g-sample"><span class="c">3</span><span class="nm">예시 하수인</span><span class="ef">도발. 전투의 함성: 카드를 1장 뽑는다</span><span class="a">2</span><span class="r">야수</span><span class="l">4</span></div>
+   {t:'하수인 카드', s:`<div class="g-card" style="background:none"><div class="g-sample"><span class="c">3</span><span class="nm">예시 하수인</span><span class="ef">도발. 등장: 카드를 1장 뽑는다</span><span class="a">2</span><span class="r">야수</span><span class="l">4</span></div>
       <ul class="g-legend" style="margin:0"><li><b>왼쪽 위(파랑)</b> 마나 비용</li><li><b>왼쪽 아래(노랑)</b> 공격력</li><li><b>오른쪽 아래(빨강)</b> 체력</li><li><b>아래 가운데</b> 종족</li><li><b>가운데 글</b> 키워드와 효과</li></ul></div>`,
     x:'<p>전장에 남아 싸운다. 낸 다음 턴부터 공격한다.</p>'},
    {t:'주문 카드', s:`<div class="g-card" style="background:none"><div class="g-sample sp"><span class="c">2</span><span class="nm">불꽃 화살</span><div class="art2"></div><span class="ef" style="top:60px">적 하나에게 피해 3</span><span class="r">✦ 화염 주문 ✦</span></div>
       <ul class="g-legend" style="margin:0"><li><b>왼쪽 위(파랑)</b> 마나 비용</li><li><b>공격력·체력 없음</b></li><li><b>아래</b> ✦ 속성 주문 ✦</li></ul></div>`,
     x:'<p>쓰면 효과를 내고 사라진다.</p>'},
-   {t:'종족과 룬', s:`<div class="gp-row">${gcol(gmc({cls:'me',art:'스테레오 토템',nm:'스테레오 토템',c:2,a:0,h:3}),'<span class="chip tr">토템</span> 종족')}${gcol(gmc({cls:'me',art:'카인 선퓨리',nm:'카인 선퓨리',c:4,a:3,h:5}),'종족 없음')}</div><div class="gp-sep"></div>
+   {t:'종족과 룬', s:`<div class="gp-row">${gcol(gmc({cls:'me',art:'스테레오 토템',nm:'스테레오 토템',c:2,a:0,h:3}),'<span class="chip tr">토템</span> 종족')}${gcol(gmc({cls:'me',art:'돌격 악마사냥꾼',nm:'돌격 악마사냥꾼',c:4,a:3,h:5}),'종족 없음')}</div><div class="gp-sep"></div>
       <div class="gp-row"><span class="chip un">부정 룬</span><span class="chip fr">냉기 룬</span><span class="chip bl">혈기 룬</span></div>`,
     x:'<p><b>종족</b>은 카드 아래 가운데, <b>룬</b>은 맨 아래에 적힌다.</p>'},
    {t:'탈진', s:`<div class="gp-row">${gcol('<div class="slot" style="width:44px;height:60px"></div>','덱이 비었다!')}<span class="gp-arrow">→</span>${gcol(ghero('🙂',CONFIG.HERO_HP-1),'뽑을 때마다')}</div>
@@ -2420,7 +2420,7 @@ function guideCard(){
   return gPager('card',pages);
 }
 function guideRule(){
-  const C=CONFIG, ME='카인 선퓨리', EN='누더기골렘', TAUNT='강철나무 골렘';
+  const C=CONFIG, ME='돌격 악마사냥꾼', EN='누더기골렘', TAUNT='철목 골렘';
   const pages=[
    {t:'🏆 승리 조건', s:`<div class="gp-row">${gcol(ghero('🙂',C.HERO_HP),'내 영웅 체력 '+C.HERO_HP)}${gcol(ghero('😈',C.HERO_HP),'상대 영웅 체력 '+C.HERO_HP)}</div><div class="gp-sep"></div>
       <div class="gp-row">${gcol(ghero('😈',0,{dead:true}),'상대 체력 0')}<span class="gp-arrow">=</span>${gcol('<div style="font-size:2rem">🏆</div>','승리!')}</div>`,
@@ -2790,7 +2790,7 @@ ServerStore.onCardsGranted = names => { try{ logLine('보상 카드가 내 컬�
 // ======================================================================
 const PolicyNet = (() => {
   const REG0 = {"_설명":"번호는 절대 바꾸지 말 것. 새 항목은 맨 뒤에만 추가됨 (tools\\update_registry.js). 배열 위치+1 = 번호(names, effs), 위치 = 칸 번호(kws).","caps":{"names":1024,"effs":512,"kws":160},"names":["들쥐","책벌레","은빛 신병","돌담 견습병","견습 검사","방패병","약초꾼","훈련 교관","빛나는 파수병","매의 눈 궁수","숲 늑대","화염 정령","부족의 주술사","수정 골렘","강철 파수대장","떠돌이 치유사","돌 골렘","용병대장","대지 정령","빛의 수호자","불사조","늙은 사자","벼락 마법사","시간의 마법사","서리 거인","폭풍 부르는 자","심판관","고대 용","고대의 수호룡","날쌘 척후병","대마법학자 롬메스","주문 직조사","회귀의 사서","유물 수집가","성소의 수습사제","명암의 사도","분열하는 점액","요그사론","대마법 보호막","탈란지의 최후의 저항","냉혹한 겨울","치유의 빛","침묵","불꽃 화살","지식의 서","수호의 장벽","급습","처형","불의 비","첫 번째 불꽃","매서운 한파","눈보라","냉기 돌풍","신비술사의 고서","주머니 차원","주문술사의 흐름","비전 수호자","서리","복제","강화","회수","변이","번개","화염구","대폭발","주문 발견","피의 서약","불꽃 점괘","사냥개 떼","철벽 소집","혼돈의 주문서","고대의 축복","숲의 지원군","일식","금단의 과일","번개 개화","생물학 프로젝트","대지의 비늘","급속 성장","등산용 간식","키틴질 껍질","퇴비 만들기","새로운 경지","숲의 영혼","야생의 포효","휘둘러치기","줄이기","흉포한 울음소리","대지의 수호","덱 탐색","공중활강","육성","딱정벌레술","숨겨진 오아시스","영원의 불화살","아달의 수호자","시간대 수선","가시가 돋친 탈것","분파","저지해라!","아마라의 이야기","데자뷔","번개 폭풍","뒤틀린 황천","일거리가 있다던데","물 공급지","적자생존","야생의 선물","궁극의 역병","퍼져나가는 역병","톨비르 대적","신비한 양초맨","되감기","극한 반복","박학다식","마나 흡수","열광의 덱","점화","얼음 회오리","초신성","은하계 투영 구슬","왕의 축복","망자 되살리기","방부 의식","유령 출몰","빛폭탄","영혼의 절규","패거리","소멸","파괴의 정기","선조의 부름","용의자 줄 세우기","방패 올리기","태양샘","교도소 마나스톰","대마법사 안토니다스","속임수 토템","대마법사 바르고스","로데브","노움 쩝쩝이","흉측한 허물","흡혈","피의 역병","공기 누출","혈기술사","마우와 파우","그훈","분노의 여사제","신화의 공포","타락심장 심문관","고대의 공허 사냥개","원한 맺힌 소환사","가젯잔 경매인","비전 거인","엄폐","별 관측자","지저왕","지진발","하드로녹스","아비아나","티란투스","잊힌 왕 쿤","전장의 강령술사","소리치는 요들러","악성 공포물","어둠가시 바느질꾼","시체 폭발","피의 기록관 말라코르","거머리 어미 발토라","피의 소용돌이","시초자","왕궁정원사","뱀사육사","공허의 영혼","카인 선퓨리","강철나무 골렘","여름의 평화수호자","늘푸른 수사슴","재생의 드루이드","토이란투스","날개 달린 수호자","독사 떼","실탄 장전","성게 가시","사스퀙","골드린","왕 크루쉬","밴조사우루스","에메리스","불꽃꼬리 전사","주문사수","깊은물 기원사","바르덴 던그래스프","요그사론의 종복","진눈깨비 스케이터","시프","회색 현자 앵무새","대규모 변이","용소환사 알라나","화염용","불굴의 토레스","태양지기 타림","성기사 에드릭","안녕극단","정신의 창조술사","세데크 장막직공","영혼 채찍","생각 훔치기","정신 분열","천상의 정신","대주교 베네딕투스","암흑의 정수","그훈의 피","흑요석 석상","대규모 부활","무덤괴수","칼날 부채","타르막","얼굴 수집가","소냐 워터댄서","엘프 음악가","무역왕 갤리윅스","전력 질주","환영의 물약","오메가 조립 시설","겁에 질린 조합원","용의 포효","대장군 분","앙심","다리우스 크롤리","대지조각가 이프","토르톨라","문제아","두억시니","해일","걸어 다니는 샘","눈사태 수호자","퇴화","불안정한 진화","깊은무쇠 트로그","교단 수련사","보석 박힌 딱정벌레","비겁한 밀고자","안녕로봇","데스윙","광염의 피락","해방된 분노 이샤라즈","허기진 포식자","부상당한 크발디르","부정한 알","불안정한 프로토타입","검 제작의 대가","공작 켈레세스","곰팡이술사","깔깔대는 발명가","기사대장","누더기골렘","공격대장","공중급수체","나무정령","지하군주","마력 깃든 까마귀","부화장 도우미","비명익룡 알","엘룬의 예언자","오늘의 월척","브롤 베어맨틀","그물거미","여명회 파수병","채광 사상자","평등","대사제 데칼","병력 소집","신의 은총","거품로봇","창심장 파수병","부두 토템","거대한 토템 아이스오르","불꽃의 토템","물 공급 토템","스테레오 토템","죄악석 토템","토템 골렘","돌장인","칼바람 폭풍소환사","바람의 군주 알아키르"],"effs":["adalGuardian","airLeak","amaraTale","ancestors","arcaneGuardian","arcaneTome","armorCry","ascend","blizzard","bloodDiscover","bloodDrain","bloodPlague","bloodSip","bloom","bolt","buff","carapace","chaos","choice","cleave","coldFront","compost","copy","cover","crystal","damage","damageDiscover","deckDiscover","destroyAll","discover","draw","eclipse","enemySweepDraw","enhance","essence","eternalBolt","execute","firstFlame","forestSoul","freeze","frenzyDeck","frostbite","fruit","furyCry","gainMana","galaxyOrb","gang","giveShield","glide","grantBuff","growth","guardian","handDiscover","haste","heal","healHoly","holdLine","iceTornado","ignite","kuhn","learned","leechSummon","lightBomb","lineUp","loopDiscover","manaDrain","manastorm","massDeathSummonCost","massElusive","massEnhance","muster","pocketDimension","rain","raiseDead","raiseShield","recall","recastLog","recycle","replayOne","resurrect","revealSummon","rewind","roar","scale","scatter","seedDeck","shrink","silence","snack","soulScream","spellFlow","spellTax","splitCopy","spreadPlague","summon","sunwell","supernova","survival","sweep","tauntDiscover","thornMount","timeMend","transform","ultPlague","vanishAll","wildGift","wipe","yogg","adjBuffCry","alana","avalancheFreeze","benedictus","bloodVortex","bubbleCry","bulletLoad","comboDraw","copyDragons","corpseBlast","crystalBuff","darkEssence","deathwing","decalCry","deckBuff","devolve","devour","discoverCost","divineFavor","divineSpirit","doubleHand","dragonRoar","drawSpellArmor","edric","equality","faceCollector","fanKnives","frostWarden","grudge","hatchCry","illusionPotion","machinesCry","malakor","massRaise","massTransform","mindBlast","mindCopy","mindSteal","natureCast","omegaFacility","originator","parrot","peaceDraw","pyroar","repeatAll","repeatLast","selfHurt","shieldCry","sleetFreeze","snitch","soulWhip","spellHunt","spellPoison","spiritsCry","stoneCry","stormCry","tarim","tarmak","tauntDiscoverBc","upgradeMinion","valtora","voidSoul","wormCry","yodel"],"kws":["shield","taunt","charge","revive","rush","deathCopy","deathGain","onAttackCopy","lifeCost","twin","overload","lifesteal","dynCost","onSpellFireball","endCast","elusive","endRecast","endAttack","leechBoost","endCorpses","startSpend","endScatter","endBait","spellAura","endSteal","onSpellDraw","spellburst","deathArmor","deathBuffAll","deathGrave","costOne","stealth","stealthTemp","poison","wfUsed","tempAtk","shieldHits","echoTemp","isMini","hatchLeft","infect","endRaise","endCopy","endLotus","endViper","ignoreTaunt","needArmor","reviveFull","hunter","beastDouble","onAttackBeast","onSpellScatter","endCastMin","mini","spellDmgSchools","shieldAura","deathMachines","spellWeave","endDeckCopy","deathKill","echo","sonya","gally","crowley","endArmorSummon","tortola","endBully","windfury","trogg","fireImmune","endDeckSummon","infuse","eggChicken","deathProto","endSword","deathAdjBuff","deathAoe","atkAura","deathSummon","lordGrow","deathPtero","pteroEgg","copyLow","fishHeal","onSpellBeast","deathBeast","endSpellGain","endTotemBuff","adjAtkAura","endAdjBuff","endHandBuff","endSelfHp"],"struct":["type","name","cost","atk","hp","maxHp","effect","school","runes","rc","tribe","rarity","id"]};
-  const ALIASES = {};
+  const ALIASES = (typeof CARD_RENAMES!=='undefined') ? Object.fromEntries(Object.entries(CARD_RENAMES).map(([o,n])=>[n,o])) : {};   // 새 카드 이름 → 번호표(학습 모델)의 옛 이름 (cardrenames.js)
   let REG = REG0, regSource = '내장';
   const ACTION_TYPES = ['END_TURN', 'PLAY_CARD', 'ATTACK', 'CHOOSE', 'TARGET', 'HERO_ATTACK'];
   const TK = { NONE: 0, HERO_ME: 1, HERO_OPP: 2, MINION_ME: 3, MINION_OPP: 4, HAND: 5 }, N_TK = 6;
@@ -3559,7 +3559,7 @@ const KEYWORD_HELP = [
   ['경고장','주인의 턴이 정해진 횟수만큼 끝나면 그 하수인은 처치된다.'],
   ['카페인 과다복용','공격력 +3. 주인의 턴이 끝나면 생명력 -2, 기절.'],
   ['3초만 더 보기','30% 확률로 아무 행동도 못 하고 이번 턴을 넘긴다.'],
-  ['두꺼운 수험서','0/3 토큰. 죽음의 메아리: 그 주인의 영웅에게 피해 4.'],
+  ['두꺼운 수험서','0/3 토큰. 유언: 그 주인의 영웅에게 피해 4.'],
   ['주문 공격력','주문이 주는 피해가 그만큼 늘어난다.'],
   ['소심함','공격력이 1이 된다.'],
   ['식곤증','다음 턴에 카드를 1장 덜 뽑고, 무작위 하수인 하나가 빙결된다.'],
@@ -3576,7 +3576,7 @@ const KEYWORD_HELP = [
   ['PC방 올빼미','4/4 속공 토큰.'],
   ['당근마켓 정산금','동전: 이번 턴 마나 +1.'],
   ['카페인 충전','0코스트 주문: 이번 턴 마나 +1.'],
-  ['게임 불감증','0/1 토큰. 죽음의 메아리: 그 주인의 손에서 무작위 하수인 제거.'],
+  ['게임 불감증','0/1 토큰. 유언: 그 주인의 손에서 무작위 하수인 제거.'],
   ['지문','도발, 공격 불가 토큰.'],
   ['블러드 엘프','상대 전장에 생기는 3/3 토큰.'],
   ['오크','3/3 토큰.'],
@@ -3595,8 +3595,6 @@ const KEYWORD_HELP = [
   ['면역','피해를 받지 않는다.'],
   ['내구도','쓸 때마다 1씩 줄고, 0이 되면 사라진다.'],
   ['밤샘 개발자','1/1 기계 토큰. 좋은 효과 1개와 나쁜 효과 1개를 무작위로 가진다.'],
-  ['함성','전투의 함성의 줄임말.'],
-  ['죽메','죽음의 메아리의 줄임말.'],
   ['도발','적은 도발 하수인을 먼저 공격해야 한다.'],
   ['돌진','낸 턴에 바로 공격할 수 있다.'],
   ['속공','낸 턴에 하수인만 공격할 수 있다.'],
@@ -3605,8 +3603,8 @@ const KEYWORD_HELP = [
   ['은신','공격하기 전까지 적이 대상으로 고를 수 없다.'],
   ['빙결','다음 공격 기회를 한 번 잃는다.'],
   ['침묵','하수인의 능력과 효과를 모두 지운다.'],
-  ['죽음의 메아리','하수인이 죽을 때 발동한다.'],
-  ['전투의 함성','손에서 낼 때 발동한다.'],
+  ['유언','하수인이 죽을 때 발동한다.'],
+  ['등장','손에서 낼 때 발동한다.'],
   ['과부하','다음 턴에 마나 수정이 그만큼 잠긴다.'],
   ['발견','3장 중 1장을 골라 손에 넣는다.'],
   ['질풍','한 턴에 두 번 공격할 수 있다.'],
@@ -3719,9 +3717,9 @@ const KW_FLAGS=[['taunt','도발'],['charge','돌진'],['rush','속공'],['shiel
 function frontText(c, full){                                                     // v158 카드가 커져서 앞면도 줄임말 없이 전체 문장 (cardtext.js 의 짧은 문구는 더 쓰지 않는다)
   return full;
 }
-// v158 카드 문구의 키워드는 굵게 (전투의 함성 · 죽음의 메아리 · 도발 …)
+// v158 카드 문구의 키워드는 굵게 (등장 · 유언 · 도발 …)
 function kwHtml(t){                                                          // (함수 안에서 만들어 둔다: 스크립트를 읽는 도중에 불려도 안전하게)
-  const re=kwHtml.re || (kwHtml.re=new RegExp('('+['전투의 함성','죽음의 메아리','생명력 흡수','주문 공격력','도발','돌진','속공','독성','보호막','은신','빙결','침묵','과부하','발견','질풍','환생','모면','잔상','면역'].join('|')+')','g'));
+  const re=kwHtml.re || (kwHtml.re=new RegExp('('+['등장','유언','생명력 흡수','주문 공격력','도발','돌진','속공','독성','보호막','은신','빙결','침묵','과부하','발견','질풍','환생','모면','잔상','면역'].join('|')+')','g'));
   return String(t||'').replace(/[&<>"]/g,ch=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[ch])).replace(re, '<b class="kw">$1</b>');
 }
 function effSizeClass(len){ return len>86 ? 'eff-5' : len>68 ? 'eff-4' : len>50 ? 'eff-3' : len>32 ? 'eff-2' : ''; }

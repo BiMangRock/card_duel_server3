@@ -11,7 +11,7 @@ const auth = require('./auth'), saves = require('./saves'), progress = require('
 
 assert(!craftableCard(E.CARD_POOL.find(c => c.name === '학사모')), '학사모는 제작 불가');
 assert(!craftableCard(E.CARD_POOL.find(c => c.scope === 'boss')), '보스 전용 제작 불가');
-assert(craftableCard(E.CARD_POOL.find(c => c.name === '데스윙')), '전설 일반 카드 제작 가능');
+assert(craftableCard(E.CARD_POOL.find(c => c.name === '파멸의 흑룡')), '전설 일반 카드 제작 가능');
 
 const app = express(); app.use(express.json());
 app.use('/api', auth.router); app.use('/api', saves.router); app.use('/api', progress.router);
@@ -27,7 +27,7 @@ const server = http.createServer(app).listen(0, async () => {
     let r = await call('GET', '/api/save'); const col0 = r.data.collection; let rev = r.data.wallet.rev, gold = r.data.wallet.gold;
     r = await call('GET', '/api/progress'); assert.strictEqual(r.data.dust, 0); assert.strictEqual(r.data.quests.list.length, PROGRESS.PER_DAY);
     // 제작: 가루 부족
-    r = await call('POST', '/api/craft', { name: '데스윙' }); assert.strictEqual(r.status, 400);
+    r = await call('POST', '/api/craft', { name: '파멸의 흑룡' }); assert.strictEqual(r.status, 400);
     // 분해: 덱(추천 덱)에 쓰는 장수는 못 분해
     const deck = E.defaultDeckList(); const used = deck[0]; const usedN = deck.filter(n => n === used).length;
     r = await call('POST', '/api/disenchant', { name: used, count: col0[used] }); assert.strictEqual(r.status, 400, '덱에 쓰는 카드');
@@ -38,8 +38,8 @@ const server = http.createServer(app).listen(0, async () => {
     assert.strictEqual(r.data.dust, PROGRESS.DISENCHANT['일반'] * freeN); assert(!r.data.collection[free]);
     // 가루를 넣어 두고 제작
     await db.prepare('UPDATE player_progress SET dust=5000').run();
-    r = await call('POST', '/api/craft', { name: '데스윙' }); assert.strictEqual(r.status, 200); assert.strictEqual(r.data.collection['데스윙'], 1); assert.strictEqual(r.data.dust, 5000 - 1600);
-    r = await call('POST', '/api/craft', { name: '데스윙' }); r = await call('POST', '/api/craft', { name: '데스윙' }); assert.strictEqual(r.status, 400, '2장 넘게는 못 만듦');
+    r = await call('POST', '/api/craft', { name: '파멸의 흑룡' }); assert.strictEqual(r.status, 200); assert.strictEqual(r.data.collection['파멸의 흑룡'], 1); assert.strictEqual(r.data.dust, 5000 - 1600);
+    r = await call('POST', '/api/craft', { name: '파멸의 흑룡' }); r = await call('POST', '/api/craft', { name: '파멸의 흑룡' }); assert.strictEqual(r.status, 400, '2장 넘게는 못 만듦');
     r = await call('POST', '/api/craft', { name: '학사모' }); assert.strictEqual(r.status, 400);
     // 남는 카드 한꺼번에 분해
     { const uid = (await db.prepare("SELECT id FROM users WHERE username='crafter1'").get()).id, n = free === '들쥐' ? '책벌레' : '들쥐';   // v140 스타터에 없을 수도 있어서 넣어 둔다

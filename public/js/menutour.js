@@ -1,11 +1,11 @@
 // menutour.js (v140) — 5부 튜토리얼 「메뉴 둘러보기」: 덱 만들기·덱 슬롯 · 상점 · 카드 제작 · 퀘스트 · 모드
-//  - 기본~4부 튜토리얼처럼 제이나(와 가로쉬)의 대화로 진행한다. 실제 메인 메뉴 위에서 한다 (연습 화면이 아님)
+//  - 기본~4부 튜토리얼처럼 엘라(와 카르바)의 대화로 진행한다. 실제 메인 메뉴 위에서 한다 (연습 화면이 아님)
 //  - 안내하는 곳만 밝게 남기고 나머지는 어둡게 막는다. 안내한 행동을 실제로 하면(화면이 바뀌면) 다음 단계로
 //  - 끝나면 서버에 'menu' 완료를 남기고, 그 자리에서 첫 완료 보상을 받을 수 있다 (📜 퀘스트 → 🌱 첫 걸음과 같은 보상, 한 번만)
 //  - 시작: 튜토리얼 화면의 5부 [시작] · 4부 승리 창의 [5부 ▶] (/#tour) → MenuTour.start()
 const MenuTour = (() => {
   'use strict';
-  const NAME = { J: '제이나', G: '가로쉬' }, face = k => `/tutorial/images/${k}.jpg`;
+  const NAME = { J: '엘라', G: '카르바' }, face = k => `/tutorial/images/${k}.jpg`;
   const KW = s => `<span class="mt-kw">${s}</span>`;
   const q = s => document.querySelector(s);
   const shown = id => { const e = document.getElementById(id); return !!e && e.classList.contains('show'); };
@@ -20,7 +20,7 @@ const MenuTour = (() => {
     { ch: 0, title: '메뉴 둘러보기', type: 'info',
       say: [['J1', `이번엔 싸움 밖을 둘러봐요.`],
             ['G2', '칼은 안 휘두르고 메뉴 구경이라니. 마법사다운 한가한 짓이군.'],
-            ['J2', '준비가 반이에요, 가로쉬. 안내하는 곳만 밝게 남겨 둘게요. 거기를 직접 눌러 보세요.']] },
+            ['J2', '준비가 반이에요, 카르바. 안내하는 곳만 밝게 남겨 둘게요. 거기를 직접 눌러 보세요.']] },
     // ---- 덱 ----
     { ch: 0, title: '내 덱', type: 'do', sel: 'button[onclick="openDeckList()"]', until: () => shown('deckListModal'),
       say: [['J1', `먼저 ${KW('📚 내 덱')}이에요. 대전에 들고 갈 카드 30장을 정하는 곳이죠.`]],
@@ -47,7 +47,7 @@ const MenuTour = (() => {
       task: '<b>저장</b>을 누르세요.' },
     { ch: 0, title: '내 덱 완성', type: 'info', sel: '#deckSlots',
       say: [['J2', () => deckFull() && !MenuTour._made ? '덱 칸이 가득 차 있어서 이번엔 새로 만들지 않았어요. 기존 덱의 <b>편집</b>에서 똑같이 하면 돼요.' : '새 덱이 생겼어요! <b>사용하기</b>를 누르면 다음 대전부터 이 덱으로 싸워요.'],
-            ['G1', '30장이든 300장이든, 호드의 도끼 앞에선 다 종이 쪼가리다.'],
+            ['G1', '30장이든 300장이든, 북방 무리의 도끼 앞에선 다 종이 쪼가리다.'],
             ['J3', '그 종이 쪼가리에 4부에서 졌잖아요?']] },
     { ch: 0, title: '닫기', type: 'do', sel: 'button[onclick="closeDeckList()"]', until: () => !shown('deckListModal'),
       say: [['J1', '덱은 됐어요. <b>닫기</b>로 메뉴로 돌아가요.']], task: '<b>닫기</b>를 누르세요.' },

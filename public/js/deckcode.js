@@ -28,7 +28,7 @@ const DeckCode = (() => {
     const names = new Set((pool || []).map(c => c.name)), deck = [], unknown = [];
     for (const e of obj.c) {
       if (!Array.isArray(e)) continue;
-      const nm = String(e[0]), k = Math.max(0, Math.min(10, Math.floor(Number(e[1]) || 0)));
+      const nm0 = String(e[0]), nm = (typeof renamedCard === 'function') ? renamedCard(nm0) : nm0, k = Math.max(0, Math.min(10, Math.floor(Number(e[1]) || 0)));   // 예전 덱 코드의 옛 카드 이름은 새 이름으로 (cardrenames.js)
       if (!names.has(nm)) { unknown.push(nm); continue; }
       for (let i = 0; i < k; i++) deck.push(nm);
     }

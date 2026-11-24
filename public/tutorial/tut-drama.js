@@ -1,5 +1,5 @@
 // tut-drama.js (v143) — 튜토리얼 1~4부 공용 연출 (화면 효과만, 규칙·진행과 상관없음)
-//  intro: 대결 오프닝(제이나 VS 가로쉬) · chapter: 장 제목 카드 · taunt: 가로쉬 대사를 전장 위 말풍선으로
+//  intro: 대결 오프닝(엘라 VS 카르바) · chapter: 장 제목 카드 · taunt: 카르바 대사를 전장 위 말풍선으로
 //  impact: 타격 흔들림 · turn: 턴 배너 · big: 결정타/승리 글자 · split: 긴 대사를 한 문장씩 나누기
 (function (root) {
   'use strict';
@@ -44,7 +44,7 @@
     document.body.appendChild(c); setTimeout(() => c.remove(), 2050);
   };
 
-  // 가로쉬 대사 → 가로쉬 영웅 옆 말풍선. G3(호령)은 크게 + 전장 흔들림, G4(패배)는 영웅이 휘청
+  // 카르바 대사 → 카르바 영웅 옆 말풍선. G3(호령)은 크게 + 전장 흔들림, G4(패배)는 영웅이 휘청
   let tauntT = null;
   D.taunt = function (code, html) {
     if (!code || code[0] !== 'G') return;

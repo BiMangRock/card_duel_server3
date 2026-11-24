@@ -164,7 +164,7 @@
     const t = holder.token, box = document.createElement('div'); box.className = 'cm-token d' + depth;
     const opt = (lo, hi, v) => Array.from({ length: hi - lo + 1 }, (_, i) => `<option${lo + i === v ? ' selected' : ''}>${lo + i}</option>`).join('');
     box.innerHTML = `
-      <div class="cm-tk-head">${depth > 1 ? '↳ ' : ''}${when === 'end' ? '내 턴이 끝날 때' : when === 'death' ? '죽음의 메아리' : '전투의 함성'}로 소환할 하수인 <select class="cm-num tk-count">${opt(1, CardRules.CUSTOM.SUMMON_MAX, holder.count)}</select>마리</div>
+      <div class="cm-tk-head">${depth > 1 ? '↳ ' : ''}${when === 'end' ? '내 턴이 끝날 때' : when === 'death' ? '유언' : '등장'}로 소환할 하수인 <select class="cm-num tk-count">${opt(1, CardRules.CUSTOM.SUMMON_MAX, holder.count)}</select>마리</div>
       <div class="cm-tk-body">
         <div class="cm-tk-card"></div>
         <div class="cm-tk-form">
@@ -184,7 +184,7 @@
       const r = CardRules.cleanToken(t, depth, [], { skipName: true });
       const card = { type: 'minion', name: t.name || '소환수', cost: 0, atk: r.atk, hp: r.hp, id: -2, art: t.art };
       for (const k of r.kw) card[k] = true;
-      if (r.summons.length) card.customText = r.summons.map(c => (c.when === 'end' ? '내 턴이 끝날 때, ' : '죽음의 메아리: ') + `${CardRules.tokenDesc(c.token)} ${c.count}마리 소환`).join('. ');
+      if (r.summons.length) card.customText = r.summons.map(c => (c.when === 'end' ? '내 턴이 끝날 때, ' : '유언: ') + `${CardRules.tokenDesc(c.token)} ${c.count}마리 소환`).join('. ');
       try { const el = cardEl(card); el.classList.add('cm-card-sm'); mini.appendChild(el); } catch (_) { mini.textContent = card.name; }
       const np = t.name ? CardRules.nameProblem(t.name) : '이름을 지어 주세요';
       const m = box.querySelector('.tk-msg'); m.textContent = np ? '⚠ ' + np : ''; m.className = 'cm-msg tk-msg' + (np ? ' bad' : '');
